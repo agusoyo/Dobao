@@ -1,13 +1,21 @@
 
+export interface AdditionalServices {
+  catering: boolean;
+  cleaning: boolean;
+  multimedia: boolean;
+  vinoteca: boolean;
+}
+
 export interface Reservation {
   id: string;
-  date: string; // ISO format YYYY-MM-DD
+  date: string;
   customerName: string;
   email: string;
   phone: string;
   guests: number;
   purpose: string;
   status: ReservationStatus;
+  services: AdditionalServices;
   createdAt: string;
 }
 
