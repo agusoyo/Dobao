@@ -38,7 +38,7 @@ const IMAGES = [
     desc: "Zona de barra completa con tirador de cerveza y servicio de cafetería."
   },
   {
-    fileName: "foto6.jpg",
+    fileName: "IMG_4295.jpg",
     title: "Detalles Gourmet",
     desc: "Cristalería y menaje seleccionados para elevar cada degustación."
   },
