@@ -28,12 +28,12 @@ const IMAGES = [
     desc: "Nuestra cava climatizada con una selección exclusiva para nuestros socios."
   },
   {
-    fileName: "IMG_4293.jpeg",
+    fileName: "IMG_4294.jpeg",
     title: "Cocina de Autor",
     desc: "Equipamiento profesional de alta gama en un entorno verde esmeralda."
   },
   {
-    fileName: "IMG_4296.jpg",
+    fileName: "IMG_4295.jpg",
     title: "Barra y Servicio",
     desc: "Zona de barra completa con tirador de cerveza y servicio de cafetería."
   },
