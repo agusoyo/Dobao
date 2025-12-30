@@ -40,7 +40,7 @@ interface GalleryProps {
 
 const Gallery: React.FC<GalleryProps> = ({ onBack }) => {
   return (
-    <div className="pt-32 pb-20 px-6 max-w-7xl mx-auto">
+    <div className="pt-40 pb-20 px-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-16">
         <div>
           <h2 className="text-5xl font-serif text-white mb-4">El Espacio</h2>

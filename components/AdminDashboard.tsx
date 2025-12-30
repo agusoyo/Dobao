@@ -106,8 +106,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
+    <div className="pt-4 pb-12 md:pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+      <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
         <div>
           <div className="flex gap-4 mb-4">
             <button onClick={onBackToBooking} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">← Volver a Web</button>

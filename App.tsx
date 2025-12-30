@@ -135,7 +135,7 @@ const App: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90"></div>
               
-              <div className="relative z-10 text-center px-6 max-w-5xl">
+              <div className="relative z-10 text-center px-6 max-w-5xl mt-20">
                 <h2 className="text-6xl md:text-8xl font-serif text-white mb-6 leading-tight drop-shadow-2xl">
                   Tu espacio <br/>
                   <span className="text-[#C5A059] italic text-5xl md:text-8xl">exclusivo en Vigo</span>
@@ -155,7 +155,7 @@ const App: React.FC = () => {
               </div>
             </section>
 
-            <section id="calendario" className="py-32 px-6 bg-black">
+            <section id="calendario" className="py-32 px-6 bg-black scroll-mt-32">
               <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-16 items-start">
                 <div className="lg:col-span-7">
                   <div className="mb-8">
@@ -263,7 +263,7 @@ const App: React.FC = () => {
         )}
 
         {view === 'admin' && (
-          <div className="pt-24 min-h-screen bg-slate-50 text-slate-900">
+          <div className="pt-40 min-h-screen bg-slate-50 text-slate-900">
             {!isAdminAuthenticated ? (
               <div className="flex items-center justify-center py-20 px-6">
                 <div className="max-w-md w-full bg-white rounded-[2.5rem] p-12 shadow-2xl border border-slate-100 text-center">
