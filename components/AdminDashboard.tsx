@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Reservation, ReservationStatus, ReservationSlot } from '../types';
 import { format, getYear, getMonth, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -12,15 +12,17 @@ interface AdminDashboardProps {
   onUpdateStatus: (id: string, status: ReservationStatus) => void;
   onUpdate: (reservation: Reservation) => void;
   onDelete: (id: string) => void;
+  onImport: (newReservations: Reservation[]) => void;
   onBackToBooking: () => void;
   onLogout?: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
-  reservations, onUpdateStatus, onUpdate, onDelete, onBackToBooking, onLogout 
+  reservations, onUpdateStatus, onUpdate, onDelete, onImport, onBackToBooking, onLogout 
 }) => {
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredReservations = useMemo(() => {
     return reservations.filter(res => {
@@ -40,6 +42,42 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const getSlotLabel = (slot: ReservationSlot) => {
     return slot === ReservationSlot.MIDDAY ? 'Mediodía (12-16h)' : 'Noche (20-00h)';
+  };
+
+  const handleExportJSON = () => {
+    const dataStr = JSON.stringify(reservations, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+    const exportFileDefaultName = `Respaldo_Dobao_Gourmet_${format(new Date(), 'yyyyMMdd_HHmm')}.json`;
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.click();
+  };
+
+  const handleImportJSON = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const importedData = JSON.parse(content);
+        if (Array.isArray(importedData)) {
+          if (confirm("¿Está seguro de que desea importar estas reservas? Esto sincronizará el historial con el archivo seleccionado.")) {
+            onImport(importedData);
+          }
+        } else {
+          alert("El archivo no tiene el formato correcto.");
+        }
+      } catch (err) {
+        alert("Error al leer el archivo de respaldo.");
+      }
+    };
+    reader.readAsText(file);
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleExportExcel = () => {
@@ -82,11 +120,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleExportPDF = () => {
     try {
       const doc = new jsPDF();
-      
       doc.setFontSize(22);
       doc.setTextColor(197, 160, 89);
       doc.text("Dobao Gourmet", 14, 20);
-      
       doc.setFontSize(12);
       doc.setTextColor(100);
       doc.text("Listado de Reservas Privadas", 14, 30);
@@ -129,12 +165,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 items-center">
+          {/* Herramientas de Respaldo */}
+          <div className="flex gap-2 bg-slate-900 p-2 rounded-2xl shadow-xl w-full sm:w-auto">
+             <button 
+              onClick={handleExportJSON}
+              className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-amber-400 flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-wider"
+              title="Descargar copia de seguridad para usar en otro ordenador"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Exportar Backup
+            </button>
+            <div className="w-px h-6 bg-slate-800 self-center"></div>
+            <label className="p-2 hover:bg-slate-800 rounded-xl transition-colors text-sky-400 flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-wider cursor-pointer">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+              Importar Backup
+              <input 
+                type="file" 
+                ref={fileInputRef}
+                className="hidden" 
+                accept=".json" 
+                onChange={handleImportJSON} 
+              />
+            </label>
+          </div>
+
           <div className="flex gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm w-full sm:w-auto justify-center">
             <button 
               onClick={handleExportExcel}
               className="p-2 hover:bg-green-50 rounded-xl transition-colors text-green-700 flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-wider"
             >
-              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               Excel
             </button>
             <div className="w-px h-6 bg-slate-200 self-center"></div>
@@ -142,7 +202,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               onClick={handleExportPDF}
               className="p-2 hover:bg-red-50 rounded-xl transition-colors text-red-700 flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-wider"
             >
-              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1" /></svg>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1" /></svg>
               PDF
             </button>
           </div>
@@ -207,6 +267,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {filteredReservations.length === 0 && (
             <div className="p-12 md:p-20 text-center text-slate-400 italic text-sm">No hay reservas registradas.</div>
           )}
+        </div>
+      </div>
+
+      <div className="mt-8 bg-sky-50 border border-sky-100 rounded-2xl p-6 text-sky-800 flex items-start gap-4">
+        <svg className="w-6 h-6 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+        <div>
+          <h4 className="font-bold text-sm mb-1 uppercase tracking-wider">Consejo Pro: Portabilidad de Datos</h4>
+          <p className="text-xs leading-relaxed opacity-80">
+            Para llevar su historial de reservas a otro ordenador o dispositivo, utilice el botón <strong>Exportar Backup</strong> arriba. Guarde el archivo .json y cárguelo en el otro dispositivo con el botón <strong>Importar Backup</strong>. Esto sincronizará su historial instantáneamente.
+          </p>
         </div>
       </div>
     </div>

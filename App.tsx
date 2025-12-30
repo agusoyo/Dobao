@@ -62,6 +62,11 @@ const App: React.FC = () => {
     setView('booking');
   };
 
+  const handleImportReservations = (newReservations: Reservation[]) => {
+    setReservations(newReservations);
+    alert("Base de datos sincronizada correctamente.");
+  };
+
   const getOccupiedSlotsForDate = (date: Date | null) => {
     if (!date) return [];
     const dateStr = format(date, 'yyyy-MM-dd');
@@ -125,7 +130,7 @@ const App: React.FC = () => {
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setView('booking')}>
             <div className="w-8 h-8 md:w-12 md:h-12 border-2 border-[#C5A059] rounded-full flex items-center justify-center text-[#C5A059] font-serif text-sm md:text-xl font-bold italic shadow-[0_0_15px_rgba(197,160,89,0.3)]">DG</div>
             <div>
-              <h1 className="text-xs md:text-2xl font-bold text-white tracking-[0.15em] md:tracking-widest uppercase font-serif leading-none">DOBAO GOURMET</h1>
+              <h1 className="text-[10px] md:text-2xl font-bold text-white tracking-[0.1em] md:tracking-widest uppercase font-serif leading-none">DOBAO GOURMET</h1>
               <span className="text-[6px] md:text-[9px] text-[#C5A059] font-bold uppercase tracking-[0.3em] md:tracking-[0.4em] block mt-0.5 md:mt-1">Vigo · Experiencia Privada</span>
             </div>
           </div>
@@ -140,43 +145,43 @@ const App: React.FC = () => {
       <main className="flex-1">
         {view === 'booking' && (
           <>
-            <section className="relative min-h-[95vh] md:h-screen w-full flex items-center justify-center overflow-hidden pt-32 md:pt-0">
+            <section className="relative min-h-screen w-full flex items-start md:items-center justify-center overflow-hidden pt-64 md:pt-0">
               <img 
                 src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=2070&auto=format&fit=crop" 
                 alt="Bodega Gourmet" 
-                className="absolute inset-0 w-full h-full object-cover brightness-[0.45] scale-105" 
+                className="absolute inset-0 w-full h-full object-cover brightness-[0.4] scale-105" 
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/20 to-black/95"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black via-black/30 to-black"></div>
               
-              <div className="relative z-10 text-center px-6 max-w-5xl mt-12 md:mt-24">
-                <h2 className="text-4xl sm:text-6xl md:text-9xl font-serif text-white mb-8 leading-[1.1] drop-shadow-2xl">
-                  Tu espacio <br/>
+              <div className="relative z-10 text-center px-6 max-w-5xl mt-8 md:mt-24">
+                <h2 className="text-3xl sm:text-6xl md:text-9xl font-serif text-white mb-6 md:mb-12 leading-[1.2] md:leading-[1.1] drop-shadow-2xl">
+                  Tu espacio <br className="hidden sm:block"/>
                   <span className="text-[#C5A059] italic text-3xl sm:text-6xl md:text-9xl">exclusivo en Vigo</span>
                 </h2>
-                <div className="max-w-3xl mx-auto mb-12 p-8 md:p-10 rounded-[2.5rem] border border-white/10 bg-black/50 backdrop-blur-xl shadow-2xl">
-                   <p className="text-slate-300 text-base md:text-2xl font-light leading-relaxed">
+                <div className="max-w-3xl mx-auto mb-10 md:mb-16 p-6 md:p-12 rounded-[2rem] md:rounded-[3rem] border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl">
+                   <p className="text-slate-300 text-sm md:text-2xl font-light leading-relaxed">
                     Desde celebraciones íntimas hasta eventos corporativos de alto nivel. 
                     Privacidad y excelencia gastronómica en un entorno sofisticado diseñado para el éxito.
                   </p>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-5 md:gap-8">
-                  <a href="#calendario" className="w-full sm:w-auto bg-[#C5A059] text-black px-12 py-5 md:py-6 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-[0_10px_30px_rgba(197,160,89,0.3)] text-xs">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-10">
+                  <a href="#calendario" className="w-full sm:w-auto bg-[#C5A059] text-black px-12 py-5 md:py-7 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-[0_15px_40px_rgba(197,160,89,0.4)] text-[10px] md:text-xs">
                     Solicitar Reserva
                   </a>
-                  <button onClick={() => setView('gallery')} className="w-full sm:w-auto text-white backdrop-blur-md bg-white/10 border border-white/20 px-12 py-5 md:py-6 rounded-full font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all text-xs">
+                  <button onClick={() => setView('gallery')} className="w-full sm:w-auto text-white backdrop-blur-xl bg-white/5 border border-white/20 px-12 py-5 md:py-7 rounded-full font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all text-[10px] md:text-xs">
                     Explorar el Espacio
                   </button>
                 </div>
               </div>
             </section>
 
-            <section id="calendario" className="py-24 md:py-40 px-6 bg-black scroll-mt-28 md:scroll-mt-40">
-              <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-12 md:gap-20 items-start">
+            <section id="calendario" className="py-24 md:py-48 px-6 bg-[#080808] scroll-mt-20 md:scroll-mt-32">
+              <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-16 md:gap-24 items-start">
                 <div className="lg:col-span-7">
-                  <div className="mb-10 md:mb-16">
-                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-4">1. Seleccione Fecha</h3>
-                    <div className="w-20 h-1 bg-[#C5A059] mb-4"></div>
-                    <p className="text-slate-400 font-light text-base md:text-lg">Disponemos de dos turnos diarios independientes para su total privacidad.</p>
+                  <div className="mb-12 md:mb-20">
+                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-6">1. Seleccione Fecha</h3>
+                    <div className="w-16 h-1 bg-[#C5A059] mb-6"></div>
+                    <p className="text-slate-400 font-light text-base md:text-xl">Consulte la disponibilidad de nuestros turnos privados de mediodía o noche.</p>
                   </div>
                   <Calendar 
                     selectedDate={selectedDate} 
@@ -186,21 +191,21 @@ const App: React.FC = () => {
                 </div>
 
                 <div className="lg:col-span-5">
-                  <div className={`bg-[#0d0d0d] rounded-[2.5rem] p-8 md:p-12 border border-white/5 transition-all duration-700 shadow-2xl ${!selectedDate ? 'opacity-30 blur-sm pointer-events-none scale-95' : 'opacity-100'}`}>
-                    <h3 className="text-2xl md:text-3xl font-serif text-white mb-2">2. Su Evento</h3>
-                    <p className="text-[#C5A059] text-[10px] md:text-[11px] font-bold uppercase tracking-widest mb-10 border-b border-white/10 pb-4">
-                      {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es }) : ''}
+                  <div className={`bg-[#0d0d0d] rounded-[2.5rem] p-8 md:p-14 border border-white/5 transition-all duration-1000 shadow-[0_30px_100px_rgba(0,0,0,0.5)] ${!selectedDate ? 'opacity-30 blur-sm pointer-events-none scale-95' : 'opacity-100'}`}>
+                    <h3 className="text-2xl md:text-4xl font-serif text-white mb-3">2. Su Evento</h3>
+                    <p className="text-[#C5A059] text-[10px] md:text-xs font-bold uppercase tracking-widest mb-10 border-b border-white/10 pb-6">
+                      {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es }) : 'Seleccione una fecha'}
                     </p>
                     
-                    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
-                      <div className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-10">
+                      <div className="space-y-5">
                         <p className="text-[10px] md:text-[11px] uppercase font-bold text-slate-500 tracking-widest">Turno Deseado</p>
                         <div className="grid grid-cols-2 gap-4">
                           <button
                             type="button"
                             disabled={occupiedSlots.includes(ReservationSlot.MIDDAY)}
                             onClick={() => setSelectedSlot(ReservationSlot.MIDDAY)}
-                            className={`px-4 py-5 md:py-6 rounded-2xl border text-center transition-all ${
+                            className={`px-4 py-5 md:py-8 rounded-2xl border text-center transition-all ${
                               selectedSlot === ReservationSlot.MIDDAY 
                                 ? 'bg-[#C5A059] border-[#C5A059] text-black font-bold shadow-lg' 
                                 : occupiedSlots.includes(ReservationSlot.MIDDAY)
@@ -208,14 +213,14 @@ const App: React.FC = () => {
                                 : 'bg-transparent border-white/10 text-white hover:border-[#C5A059]/50'
                             }`}
                           >
-                            <div className="text-xs md:text-sm uppercase tracking-widest mb-1">Mediodía</div>
-                            <div className="text-[9px] md:text-[10px] opacity-60">12:00h - 16:00h</div>
+                            <div className="text-xs md:text-base uppercase tracking-widest mb-1">Mediodía</div>
+                            <div className="text-[9px] md:text-xs opacity-60">12:00h - 16:00h</div>
                           </button>
                           <button
                             type="button"
                             disabled={occupiedSlots.includes(ReservationSlot.NIGHT)}
                             onClick={() => setSelectedSlot(ReservationSlot.NIGHT)}
-                            className={`px-4 py-5 md:py-6 rounded-2xl border text-center transition-all ${
+                            className={`px-4 py-5 md:py-8 rounded-2xl border text-center transition-all ${
                               selectedSlot === ReservationSlot.NIGHT 
                                 ? 'bg-[#C5A059] border-[#C5A059] text-black font-bold shadow-lg' 
                                 : occupiedSlots.includes(ReservationSlot.NIGHT)
@@ -223,24 +228,24 @@ const App: React.FC = () => {
                                 : 'bg-transparent border-white/10 text-white hover:border-[#C5A059]/50'
                             }`}
                           >
-                            <div className="text-xs md:text-sm uppercase tracking-widest mb-1">Noche</div>
-                            <div className="text-[9px] md:text-[10px] opacity-60">20:00h - 00:00h</div>
+                            <div className="text-xs md:text-base uppercase tracking-widest mb-1">Noche</div>
+                            <div className="text-[9px] md:text-xs opacity-60">20:00h - 00:00h</div>
                           </button>
                         </div>
                       </div>
 
-                      <div className={`space-y-6 md:space-y-8 transition-all duration-500 ${!selectedSlot ? 'opacity-20 pointer-events-none blur-[2px]' : 'opacity-100'}`}>
-                        <div className="grid gap-4 md:gap-5">
-                          <input type="text" required placeholder="Nombre o Razón Social" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-[#C5A059] focus:bg-white/[0.07] outline-none text-sm transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
-                            <input type="email" required placeholder="Email" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-[#C5A059] focus:bg-white/[0.07] outline-none text-sm transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-                            <input type="tel" required placeholder="Teléfono" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-[#C5A059] focus:bg-white/[0.07] outline-none text-sm transition-all" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                      <div className={`space-y-6 md:space-y-10 transition-all duration-700 ${!selectedSlot ? 'opacity-20 pointer-events-none blur-[2px]' : 'opacity-100'}`}>
+                        <div className="grid gap-4 md:gap-6">
+                          <input type="text" required placeholder="Nombre o Razón Social" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 md:py-5 text-white focus:border-[#C5A059] focus:bg-white/[0.07] outline-none text-sm md:text-base transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                            <input type="email" required placeholder="Email" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 md:py-5 text-white focus:border-[#C5A059] focus:bg-white/[0.07] outline-none text-sm md:text-base transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                            <input type="tel" required placeholder="Teléfono" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 md:py-5 text-white focus:border-[#C5A059] focus:bg-white/[0.07] outline-none text-sm md:text-base transition-all" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                           </div>
                         </div>
 
-                        <div className="space-y-4 pt-4 border-t border-white/10">
-                          <p className="text-[10px] md:text-[11px] uppercase font-bold text-[#C5A059] tracking-widest">Servicios Premium</p>
-                          <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-5 pt-6 border-t border-white/10">
+                          <p className="text-[10px] md:text-xs uppercase font-bold text-[#C5A059] tracking-widest">Servicios Premium</p>
+                          <div className="grid grid-cols-2 gap-3 md:gap-4">
                             {[
                               { id: 'vinoteca', label: 'Cava de Vinos' },
                               { id: 'catering', label: 'Catering Gourmet' },
@@ -253,7 +258,7 @@ const App: React.FC = () => {
                                 key={s.id}
                                 type="button"
                                 onClick={() => handleServiceToggle(s.id as keyof AdditionalServices)}
-                                className={`flex items-center justify-between px-4 py-3 rounded-xl border text-[9px] md:text-[10px] font-bold uppercase tracking-tighter transition-all ${formData.services[s.id as keyof AdditionalServices] ? 'bg-[#C5A059] border-[#C5A059] text-black shadow-md' : 'bg-transparent border-white/10 text-slate-500 hover:border-white/20'}`}
+                                className={`flex items-center justify-between px-4 py-3 md:py-4 rounded-xl border text-[9px] md:text-xs font-bold uppercase tracking-tight transition-all ${formData.services[s.id as keyof AdditionalServices] ? 'bg-[#C5A059] border-[#C5A059] text-black shadow-md' : 'bg-transparent border-white/10 text-slate-500 hover:border-white/20'}`}
                               >
                                 {s.label}
                                 {formData.services[s.id as keyof AdditionalServices] && <span className="text-xs">✓</span>}
@@ -262,9 +267,9 @@ const App: React.FC = () => {
                           </div>
                         </div>
 
-                        <textarea required placeholder="Cuéntenos más sobre su evento..." className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-[#C5A059] focus:bg-white/[0.07] outline-none h-28 md:h-32 resize-none text-sm transition-all" value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
+                        <textarea required placeholder="Cuéntenos más sobre su evento..." className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 md:py-5 text-white focus:border-[#C5A059] focus:bg-white/[0.07] outline-none h-32 md:h-40 resize-none text-sm md:text-base transition-all" value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
 
-                        <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-5 md:py-6 rounded-2xl hover:bg-white transition-all uppercase text-[10px] md:text-xs tracking-[0.25em] shadow-2xl active:scale-95 transform">
+                        <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-5 md:py-7 rounded-2xl hover:bg-white transition-all uppercase text-[10px] md:text-sm tracking-[0.3em] shadow-2xl active:scale-95 transform">
                           {isSubmitting ? 'Procesando...' : 'Solicitar Propuesta de Reserva'}
                         </button>
                       </div>
@@ -288,8 +293,8 @@ const App: React.FC = () => {
                   <div className="w-16 h-16 md:w-20 md:h-20 bg-[#C5A059]/10 rounded-full flex items-center justify-center mx-auto mb-8 md:mb-10 text-[#C5A059]">
                     <svg className="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                   </div>
-                  <h3 className="text-2xl md:text-3xl font-serif mb-3">Panel de Gestión</h3>
-                  <p className="text-slate-400 text-sm md:text-base mb-10">Introduzca la clave privada de Dobao Gourmet</p>
+                  <h3 className="text-2xl md:text-4xl font-serif mb-3">Panel de Gestión</h3>
+                  <p className="text-slate-400 text-sm md:text-lg mb-10">Introduzca la clave privada de Dobao Gourmet</p>
                   
                   <form onSubmit={handleAdminLogin} className="space-y-5">
                     <input 
@@ -300,10 +305,10 @@ const App: React.FC = () => {
                       className={`w-full bg-slate-50 border-2 rounded-2xl px-6 py-4 text-center text-xl md:text-2xl outline-none transition-all ${loginError ? 'border-red-200 focus:border-red-400' : 'border-slate-100 focus:border-[#C5A059]'}`}
                     />
                     {loginError && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest animate-pulse">Clave incorrecta</p>}
-                    <button type="submit" className="w-full bg-black text-white font-bold py-5 md:py-6 rounded-2xl hover:bg-[#C5A059] hover:text-black transition-all uppercase text-xs tracking-[0.3em] shadow-xl">
+                    <button type="submit" className="w-full bg-black text-white font-bold py-5 md:py-7 rounded-2xl hover:bg-[#C5A059] hover:text-black transition-all uppercase text-xs tracking-[0.3em] shadow-xl">
                       Acceder al Sistema
                     </button>
-                    <button type="button" onClick={() => setView('booking')} className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-6 block w-full hover:text-black transition-colors">Volver a la Web</button>
+                    <button type="button" onClick={() => setView('booking')} className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-8 block w-full hover:text-black transition-colors">Volver a la Web</button>
                   </form>
                 </div>
               </div>
@@ -313,6 +318,7 @@ const App: React.FC = () => {
                 onUpdateStatus={(id, status) => setReservations(prev => prev.map(r => r.id === id ? {...r, status} : r))}
                 onUpdate={(u) => setReservations(prev => prev.map(r => r.id === u.id ? u : r))}
                 onDelete={(id) => setReservations(prev => prev.filter(r => r.id !== id))}
+                onImport={handleImportReservations}
                 onBackToBooking={() => setView('booking')}
                 onLogout={handleLogout}
               />
@@ -321,14 +327,14 @@ const App: React.FC = () => {
         )}
       </main>
 
-      <footer className="bg-black py-16 md:py-24 px-8 border-t border-white/5 text-center">
-        <div className="w-16 h-1 bg-[#C5A059] mx-auto mb-10"></div>
-        <p className="text-[#C5A059] font-serif text-2xl md:text-4xl italic mb-6">Dobao Gourmet</p>
-        <p className="text-slate-500 text-[9px] md:text-[11px] uppercase tracking-[0.5em] mb-12">Vigo · Experiencias Privadas de Alta Gastronomía</p>
-        <div className="flex flex-wrap justify-center gap-6 md:gap-12">
-          <button onClick={() => setView('gallery')} className="text-slate-400 hover:text-[#C5A059] text-[10px] md:text-[12px] uppercase font-bold tracking-widest transition-colors">Galería</button>
-          <button onClick={() => setView('booking')} className="text-slate-400 hover:text-[#C5A059] text-[10px] md:text-[12px] uppercase font-bold tracking-widest transition-colors">Reservas</button>
-          <button onClick={() => setView('admin')} className="text-slate-400 hover:text-[#C5A059] text-[10px] md:text-[12px] uppercase font-bold tracking-widest transition-colors">Administración</button>
+      <footer className="bg-black py-20 md:py-32 px-8 border-t border-white/5 text-center">
+        <div className="w-20 h-1 bg-[#C5A059] mx-auto mb-12"></div>
+        <p className="text-[#C5A059] font-serif text-3xl md:text-5xl italic mb-8">Dobao Gourmet</p>
+        <p className="text-slate-600 text-[10px] md:text-[12px] uppercase tracking-[0.6em] mb-16">Vigo · Experiencias Privadas de Alta Gastronomía</p>
+        <div className="flex flex-wrap justify-center gap-8 md:gap-16">
+          <button onClick={() => setView('gallery')} className="text-slate-400 hover:text-[#C5A059] text-[11px] md:text-[13px] uppercase font-bold tracking-[0.3em] transition-colors">Galería</button>
+          <button onClick={() => setView('booking')} className="text-slate-400 hover:text-[#C5A059] text-[11px] md:text-[13px] uppercase font-bold tracking-[0.3em] transition-colors">Reservas</button>
+          <button onClick={() => setView('admin')} className="text-slate-400 hover:text-[#C5A059] text-[11px] md:text-[13px] uppercase font-bold tracking-[0.3em] transition-colors">Administración</button>
         </div>
       </footer>
     </div>
