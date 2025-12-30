@@ -135,14 +135,14 @@ const App: React.FC = () => {
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/90"></div>
               
-              <div className="relative z-10 text-center px-6 max-w-4xl">
+              <div className="relative z-10 text-center px-6 max-w-5xl">
                 <h2 className="text-6xl md:text-8xl font-serif text-white mb-6 leading-tight drop-shadow-2xl">
                   Tu espacio <br/>
-                  <span className="text-[#C5A059] italic text-5xl md:text-8xl">privado en Vigo</span>
+                  <span className="text-[#C5A059] italic text-5xl md:text-8xl">exclusivo en Vigo</span>
                 </h2>
-                <p className="text-white max-w-2xl mx-auto mb-10 text-lg md:text-xl font-medium leading-relaxed drop-shadow-lg bg-black/20 backdrop-blur-[4px] p-6 rounded-3xl border border-white/10">
-                  Reserva tu turno exclusivo para almuerzos o cenas privadas. 
-                  Un entorno rodeado de nuestra mejor selección vinícola para garantizar el éxito de cada encuentro.
+                <p className="text-white max-w-3xl mx-auto mb-10 text-lg md:text-xl font-medium leading-relaxed drop-shadow-lg bg-black/20 backdrop-blur-[4px] p-8 rounded-3xl border border-white/10">
+                  Desde celebraciones íntimas con familiares y amigos hasta eventos comerciales de alto nivel y presentaciones de marketing. 
+                  Un entorno sofisticado donde la excelencia gastronómica y la privacidad se unen para garantizar el éxito de sus momentos más importantes, tanto personales como profesionales.
                 </p>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6">
                   <a href="#calendario" className="bg-[#C5A059] text-black px-12 py-5 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-2xl">
