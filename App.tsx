@@ -203,52 +203,57 @@ const App: React.FC = () => {
       <main className="flex-1">
         {view === 'booking' && (
           <>
-            <section className="relative min-h-[80vh] w-full flex items-center justify-center overflow-hidden pt-32">
+            <section className="relative min-h-[90vh] w-full flex items-center justify-center overflow-hidden pt-32">
               <img 
                 src={HERO_IMAGE_URL} 
                 alt="Bodega Gourmet" 
-                className="absolute inset-0 w-full h-full object-cover brightness-[0.7] contrast-[1.1]" 
+                className="absolute inset-0 w-full h-full object-cover brightness-[1.1] contrast-[1.0] transition-all duration-1000" 
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#080808]"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#080808]"></div>
               
               <div className="relative z-10 text-center px-6 max-w-5xl">
-                <h2 className="text-4xl sm:text-6xl md:text-8xl font-serif text-white mb-6 leading-tight drop-shadow-2xl">
+                <h2 className="text-4xl sm:text-6xl md:text-8xl font-serif text-white mb-6 leading-tight drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
                   Tu espacio <br className="hidden sm:block"/>
                   <span className="text-[#C5A059] italic">exclusivo en Vigo</span>
                 </h2>
-                <div className="max-w-2xl mx-auto mb-10 p-6 rounded-3xl border border-white/20 bg-black/20 backdrop-blur-md shadow-2xl">
-                   <p className="text-white text-base md:text-xl font-light leading-relaxed">
+                <div className="max-w-2xl mx-auto mb-10 p-6 rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-2xl">
+                   <p className="text-white text-base md:text-xl font-bold leading-relaxed">
                     Eventos privados, gastronomía de autor y la mejor selección de vinos en el corazón de la ciudad.
                   </p>
                 </div>
-                <a href="#calendario" className="inline-block bg-[#C5A059] text-black px-12 py-5 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-[0_10px_30px_rgba(197,160,89,0.5)]">
+                <a href="#calendario" className="inline-block bg-[#C5A059] text-black px-12 py-5 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-[0_10px_40px_rgba(197,160,89,0.6)]">
                   Reservar Fecha
                 </a>
               </div>
             </section>
 
             <section id="calendario" className="py-24 px-6 bg-[#080808] scroll-mt-20">
-              <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-16 items-start">
-                <div className="lg:col-span-6">
-                  <div className="mb-12">
-                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-6">1. El Momento</h3>
-                    <div className="w-16 h-1 bg-[#C5A059] mb-8"></div>
-                    <Calendar 
-                      selectedDate={selectedDate} 
-                      onDateSelect={setSelectedDate} 
-                      reservations={reservations.map(r => ({ date: r.date, slot: r.slot }))} 
-                    />
+              <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-10 md:gap-16 items-start">
+                {/* Columna 1: El Momento */}
+                <div className="lg:col-span-6 flex flex-col">
+                  <div className="mb-10">
+                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-4">1. El Momento</h3>
+                    <div className="w-16 h-1 bg-[#C5A059]"></div>
                   </div>
+                  <Calendar 
+                    selectedDate={selectedDate} 
+                    onDateSelect={setSelectedDate} 
+                    reservations={reservations.map(r => ({ date: r.date, slot: r.slot }))} 
+                  />
                 </div>
 
-                <div className="lg:col-span-6">
-                  <div className={`bg-[#0d0d0d] rounded-[3rem] p-8 md:p-12 border border-white/5 transition-all duration-700 ${!selectedDate ? 'opacity-30 blur-sm pointer-events-none' : 'opacity-100'}`}>
-                    <h3 className="text-2xl md:text-4xl font-serif text-white mb-3">2. Detalles</h3>
+                {/* Columna 2: Detalles (Alineada con el calendario) */}
+                <div className="lg:col-span-6 flex flex-col">
+                  <div className="mb-10">
+                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-4">2. Detalles</h3>
+                    <div className="w-16 h-1 bg-[#C5A059]"></div>
+                  </div>
+                  <div className={`bg-[#141414] rounded-[2rem] p-8 md:p-12 border border-white/5 transition-all duration-700 min-h-[600px] flex flex-col ${!selectedDate ? 'opacity-30 blur-sm pointer-events-none' : 'opacity-100 shadow-2xl shadow-[#C5A059]/5'}`}>
                     <p className="text-[#C5A059] text-[10px] font-bold uppercase tracking-widest mb-10 border-b border-white/10 pb-6">
-                      {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es }) : 'Seleccione una fecha'}
+                      {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es }) : 'Seleccione una fecha primero'}
                     </p>
                     
-                    <form onSubmit={handleSubmit} className="space-y-8">
+                    <form onSubmit={handleSubmit} className="space-y-8 flex-1">
                       {/* Turno */}
                       <div className="space-y-4">
                         <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Seleccionar Turno</label>
@@ -325,6 +330,7 @@ const App: React.FC = () => {
                     placeholder="Contraseña" 
                     className="w-full bg-slate-50 border-2 rounded-2xl px-6 py-4 text-center mb-6 outline-none"
                   />
+                  {loginError && <p className="text-red-500 text-xs mb-4">Contraseña incorrecta</p>}
                   <button type="submit" className="w-full bg-black text-white font-bold py-5 rounded-2xl hover:bg-[#C5A059] hover:text-black transition-all uppercase text-xs tracking-widest">
                     Acceder
                   </button>
