@@ -23,17 +23,17 @@ const IMAGES = [
     desc: "Iluminación de diseño y madera noble para banquetes inolvidables."
   },
   {
-    fileName: "foto3.jpg",
+    fileName: "IMG_4294.jpeg",
     title: "La Vinoteca",
     desc: "Nuestra cava climatizada con una selección exclusiva para nuestros socios."
   },
   {
-    fileName: "foto4.jpg",
+    fileName: "IMG_4295.jpg",
     title: "Cocina de Autor",
     desc: "Equipamiento profesional de alta gama en un entorno verde esmeralda."
   },
   {
-    fileName: "foto5.jpg",
+    fileName: "IMG_4296.jpg",
     title: "Barra y Servicio",
     desc: "Zona de barra completa con tirador de cerveza y servicio de cafetería."
   },
@@ -43,12 +43,12 @@ const IMAGES = [
     desc: "Cristalería y menaje seleccionados para elevar cada degustación."
   },
   {
-    fileName: "foto7.jpg",
+    fileName: "IMG_4297.jpg",
     title: "Rincón de Lectura",
     desc: "Espacios de confort diseñados para la sobremesa y la confidencia."
   },
   {
-    fileName: "foto8.jpg",
+    fileName: "IMG_4298.jpg",
     title: "Plano Abierto",
     desc: "Arquitectura diáfana que integra cocina y comedor en un solo ambiente."
   }
