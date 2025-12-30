@@ -19,7 +19,14 @@ export const INITIAL_RESERVATIONS: Reservation[] = [
     guests: 15,
     purpose: 'Cena de amigos',
     status: ReservationStatus.CONFIRMED,
-    services: { catering: false, cleaning: true, multimedia: false, vinoteca: true },
+    services: { 
+      catering: false, 
+      cleaning: true, 
+      multimedia: false, 
+      vinoteca: true,
+      beerEstrella: true,
+      beer1906: false
+    },
     createdAt: new Date().toISOString()
   },
   {
@@ -32,7 +39,14 @@ export const INITIAL_RESERVATIONS: Reservation[] = [
     guests: 20,
     purpose: 'Presentación de Producto',
     status: ReservationStatus.PENDING,
-    services: { catering: true, cleaning: true, multimedia: true, vinoteca: true },
+    services: { 
+      catering: true, 
+      cleaning: true, 
+      multimedia: true, 
+      vinoteca: true,
+      beerEstrella: false,
+      beer1906: true
+    },
     createdAt: new Date().toISOString()
   }
 ];

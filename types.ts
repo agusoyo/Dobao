@@ -9,6 +9,8 @@ export interface AdditionalServices {
   cleaning: boolean;
   multimedia: boolean;
   vinoteca: boolean;
+  beerEstrella: boolean;
+  beer1906: boolean;
 }
 
 export interface Reservation {

@@ -55,7 +55,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         Estado: res.status,
         Servicios: Object.entries(res.services)
           .filter(([_, value]) => value)
-          .map(([key, _]) => key)
+          .map(([key, _]) => {
+            const labels: Record<string, string> = {
+              catering: 'Catering',
+              cleaning: 'Limpieza',
+              multimedia: 'Multimedia',
+              vinoteca: 'Vinoteca',
+              beerEstrella: 'Barril Estrella',
+              beer1906: 'Barril 1906'
+            };
+            return labels[key] || key;
+          })
           .join(', ')
       }));
 
@@ -106,43 +116,43 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   return (
-    <div className="pt-4 pb-12 md:pb-20 px-4 md:px-8 max-w-7xl mx-auto">
-      <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+    <div className="pt-2 pb-12 md:pb-20 px-4 md:px-8 max-w-7xl mx-auto">
+      <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 md:mb-12 gap-6">
         <div>
-          <div className="flex gap-4 mb-4">
-            <button onClick={onBackToBooking} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">← Volver a Web</button>
+          <div className="flex gap-4 mb-3 md:mb-4 flex-wrap">
+            <button onClick={onBackToBooking} className="text-indigo-600 font-bold text-[9px] md:text-[10px] uppercase tracking-widest flex items-center gap-2">← Volver a Web</button>
             {onLogout && (
-              <button onClick={onLogout} className="text-red-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 ml-4">Cerrar Sesión</button>
+              <button onClick={onLogout} className="text-red-500 font-bold text-[9px] md:text-[10px] uppercase tracking-widest flex items-center gap-2">Cerrar Sesión</button>
             )}
           </div>
-          <h2 className="text-4xl font-serif text-slate-900">Gestión de Reservas</h2>
+          <h2 className="text-2xl md:text-4xl font-serif text-slate-900">Gestión de Reservas</h2>
         </div>
 
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex gap-2 mr-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
+          <div className="flex gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm w-full sm:w-auto justify-center">
             <button 
               onClick={handleExportExcel}
-              className="p-2 hover:bg-green-50 rounded-xl transition-colors text-green-700 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider"
+              className="p-2 hover:bg-green-50 rounded-xl transition-colors text-green-700 flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-wider"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               Excel
             </button>
             <div className="w-px h-6 bg-slate-200 self-center"></div>
             <button 
               onClick={handleExportPDF}
-              className="p-2 hover:bg-red-50 rounded-xl transition-colors text-red-700 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider"
+              className="p-2 hover:bg-red-50 rounded-xl transition-colors text-red-700 flex items-center gap-2 text-[9px] md:text-[10px] font-bold uppercase tracking-wider"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1" /></svg>
+              <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1" /></svg>
               PDF
             </button>
           </div>
 
-          <div className="flex gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-            <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="bg-slate-50 border-none text-xs font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
+          <div className="flex gap-3 bg-white p-2 md:p-3 rounded-2xl border border-slate-200 shadow-sm w-full sm:w-auto">
+            <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="bg-slate-50 border-none text-[10px] md:text-xs font-bold rounded-lg py-2 px-3 md:px-4 uppercase tracking-widest outline-none w-1/2 sm:w-auto">
               <option value="all">Años</option>
               {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
-            <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="bg-slate-50 border-none text-xs font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
+            <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="bg-slate-50 border-none text-[10px] md:text-xs font-bold rounded-lg py-2 px-3 md:px-4 uppercase tracking-widest outline-none w-1/2 sm:w-auto">
               <option value="all">Meses</option>
               {[...Array(12)].map((_, i) => <option key={i} value={i}>{format(new Date(2000, i, 1), 'MMMM', { locale: es })}</option>)}
             </select>
@@ -150,53 +160,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
-      <div className="bg-white rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-[1.5rem] md:rounded-3xl shadow-xl border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-slate-50/50 border-b border-slate-200">
               <tr>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Fecha y Turno</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Cliente</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Pack</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Estado</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Acciones</th>
+                <th className="px-5 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Fecha y Turno</th>
+                <th className="px-5 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Cliente</th>
+                <th className="px-5 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] hidden sm:table-cell">Servicios</th>
+                <th className="px-5 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Estado</th>
+                <th className="px-5 md:px-8 py-4 md:py-5 text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] text-right">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredReservations.map((res) => (
                 <tr key={res.id} className="hover:bg-slate-50/50 transition-colors">
-                  <td className="px-8 py-6">
-                    <div className="font-bold text-slate-900">{format(parseISO(res.date), 'dd MMMM yyyy', { locale: es })}</div>
-                    <div className="text-[10px] font-bold text-[#C5A059] uppercase tracking-wider mt-1">{getSlotLabel(res.slot)}</div>
+                  <td className="px-5 md:px-8 py-5 md:py-6">
+                    <div className="font-bold text-slate-900 text-xs md:text-base">{format(parseISO(res.date), 'dd MMM yy', { locale: es })}</div>
+                    <div className="text-[8px] md:text-[10px] font-bold text-[#C5A059] uppercase tracking-wider mt-0.5 md:mt-1">{res.slot === ReservationSlot.MIDDAY ? 'Medio' : 'Noche'}</div>
                   </td>
-                  <td className="px-8 py-6">
-                    <div className="font-semibold text-slate-900">{res.customerName}</div>
-                    <div className="text-xs text-slate-500">{res.phone}</div>
+                  <td className="px-5 md:px-8 py-5 md:py-6">
+                    <div className="font-semibold text-slate-900 text-xs md:text-base truncate max-w-[80px] sm:max-w-none">{res.customerName}</div>
+                    <div className="text-[10px] md:text-xs text-slate-500">{res.phone}</div>
                   </td>
-                  <td className="px-8 py-6">
-                    <div className="flex flex-wrap gap-1">
-                      {res.services.catering && <span className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[8px] font-bold uppercase">Catering</span>}
-                      {res.services.vinoteca && <span className="px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[8px] font-bold uppercase">Vinoteca</span>}
-                      {res.services.multimedia && <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded-md text-[8px] font-bold uppercase">Multimedia</span>}
+                  <td className="px-5 md:px-8 py-5 md:py-6 hidden sm:table-cell">
+                    <div className="flex flex-wrap gap-1 max-w-[200px]">
+                      {res.services.catering && <span className="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[8px] font-bold uppercase">Cat</span>}
+                      {res.services.vinoteca && <span className="px-2 py-0.5 bg-red-50 text-red-600 rounded-md text-[8px] font-bold uppercase">Vino</span>}
+                      {res.services.beerEstrella && <span className="px-2 py-0.5 bg-red-100 text-red-800 rounded-md text-[8px] font-bold uppercase">EST</span>}
                     </div>
                   </td>
-                  <td className="px-8 py-6">
-                    <span className={`text-[9px] font-bold px-3 py-1 rounded-full uppercase tracking-widest ${res.status === ReservationStatus.CONFIRMED ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
-                      {res.status}
+                  <td className="px-5 md:px-8 py-5 md:py-6">
+                    <span className={`text-[8px] md:text-[9px] font-bold px-2 md:px-3 py-1 rounded-full uppercase tracking-widest ${res.status === ReservationStatus.CONFIRMED ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      {res.status.substring(0, 4)}
                     </span>
                   </td>
-                  <td className="px-8 py-6 text-right space-x-3">
-                    {res.status !== ReservationStatus.CONFIRMED && (
-                      <button onClick={() => onUpdateStatus(res.id, ReservationStatus.CONFIRMED)} className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase tracking-tighter">Confirmar</button>
-                    )}
-                    <button onClick={() => onDelete(res.id)} className="text-[10px] font-bold text-red-400 hover:text-red-600 uppercase tracking-tighter">Eliminar</button>
+                  <td className="px-5 md:px-8 py-5 md:py-6 text-right space-x-2 md:space-x-3">
+                    <button onClick={() => onDelete(res.id)} className="text-red-400 hover:text-red-600">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
           {filteredReservations.length === 0 && (
-            <div className="p-20 text-center text-slate-400 italic">No hay reservas para este periodo.</div>
+            <div className="p-12 md:p-20 text-center text-slate-400 italic text-sm">No hay reservas registradas.</div>
           )}
         </div>
       </div>

@@ -40,21 +40,21 @@ interface GalleryProps {
 
 const Gallery: React.FC<GalleryProps> = ({ onBack }) => {
   return (
-    <div className="pt-40 pb-20 px-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-16">
+    <div className="pt-28 md:pt-40 pb-20 px-4 sm:px-6 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-10 md:mb-16 gap-6">
         <div>
-          <h2 className="text-5xl font-serif text-white mb-4">El Espacio</h2>
-          <p className="text-[#C5A059] italic font-serif text-lg">Un refugio gastronómico en el corazón de Vigo</p>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif text-white mb-2 md:mb-4">El Espacio</h2>
+          <p className="text-[#C5A059] italic font-serif text-base md:text-lg">Un refugio gastronómico en el corazón de Vigo</p>
         </div>
         <button 
           onClick={onBack}
-          className="bg-white/5 border border-white/10 text-white px-8 py-3 rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-[#C5A059] hover:text-black transition-all"
+          className="w-fit bg-white/5 border border-white/10 text-white px-6 md:px-8 py-3 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-widest hover:bg-[#C5A059] hover:text-black transition-all"
         >
           Volver a Reservas
         </button>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
         {IMAGES.map((img, idx) => (
           <div key={idx} className="group relative overflow-hidden rounded-3xl bg-[#141414] aspect-[4/5]">
             <img 
@@ -63,9 +63,9 @@ const Gallery: React.FC<GalleryProps> = ({ onBack }) => {
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110 brightness-[0.7] group-hover:brightness-100"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity"></div>
-            <div className="absolute bottom-0 left-0 p-8 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-              <h4 className="text-[#C5A059] font-serif text-2xl mb-2">{img.title}</h4>
-              <p className="text-slate-300 text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
+            <div className="absolute bottom-0 left-0 p-6 md:p-8 transform translate-y-2 md:translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+              <h4 className="text-[#C5A059] font-serif text-xl md:text-2xl mb-2">{img.title}</h4>
+              <p className="text-slate-300 text-xs md:text-sm leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
                 {img.desc}
               </p>
             </div>
@@ -73,11 +73,11 @@ const Gallery: React.FC<GalleryProps> = ({ onBack }) => {
         ))}
       </div>
 
-      <div className="mt-20 text-center bg-[#141414] border border-white/5 rounded-[3rem] p-16">
-        <h3 className="text-3xl font-serif text-white mb-6">¿Desea conocerlo en persona?</h3>
+      <div className="mt-12 md:mt-20 text-center bg-[#141414] border border-white/5 rounded-[2rem] md:rounded-[3rem] p-8 md:p-16">
+        <h3 className="text-xl md:text-3xl font-serif text-white mb-6">¿Desea conocerlo en persona?</h3>
         <button 
           onClick={onBack}
-          className="bg-[#C5A059] text-black px-12 py-5 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105"
+          className="bg-[#C5A059] text-black px-8 md:px-12 py-4 md:py-5 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 text-[10px] md:text-xs"
         >
           Solicitar Visita o Reserva
         </button>
