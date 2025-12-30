@@ -10,10 +10,11 @@ interface AdminDashboardProps {
   onUpdate: (reservation: Reservation) => void;
   onDelete: (id: string) => void;
   onBackToBooking: () => void;
+  onLogout?: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
-  reservations, onUpdateStatus, onUpdate, onDelete, onBackToBooking 
+  reservations, onUpdateStatus, onUpdate, onDelete, onBackToBooking, onLogout 
 }) => {
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
@@ -42,7 +43,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
         <div>
-          <button onClick={onBackToBooking} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest mb-4 flex items-center gap-2">← Volver a Web</button>
+          <div className="flex gap-4 mb-4">
+            <button onClick={onBackToBooking} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">← Volver a Web</button>
+            {onLogout && (
+              <button onClick={onLogout} className="text-red-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2 ml-4">Cerrar Sesión</button>
+            )}
+          </div>
           <h2 className="text-4xl font-serif text-slate-900">Gestión de Reservas</h2>
         </div>
 

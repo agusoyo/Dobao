@@ -23,16 +23,38 @@ const App: React.FC = () => {
     services: { catering: false, cleaning: true, multimedia: false, vinoteca: false }
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Admin Auth States
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [loginError, setLoginError] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('txoko_reservations_v3', JSON.stringify(reservations));
     window.scrollTo(0, 0);
   }, [reservations, view]);
 
-  // Reset slot when date changes
   useEffect(() => {
     setSelectedSlot(null);
   }, [selectedDate]);
+
+  const handleAdminLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Contraseña de ejemplo: admin2025
+    if (passwordInput === 'admin2025') {
+      setIsAdminAuthenticated(true);
+      setLoginError(false);
+      setPasswordInput('');
+    } else {
+      setLoginError(true);
+      setPasswordInput('');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAdminAuthenticated(false);
+    setView('booking');
+  };
 
   const getOccupiedSlotsForDate = (date: Date | null) => {
     if (!date) return [];
@@ -242,13 +264,41 @@ const App: React.FC = () => {
 
         {view === 'admin' && (
           <div className="pt-24 min-h-screen bg-slate-50 text-slate-900">
-            <AdminDashboard 
-              reservations={reservations} 
-              onUpdateStatus={(id, status) => setReservations(prev => prev.map(r => r.id === id ? {...r, status} : r))}
-              onUpdate={(u) => setReservations(prev => prev.map(r => r.id === u.id ? u : r))}
-              onDelete={(id) => setReservations(prev => prev.filter(r => r.id !== id))}
-              onBackToBooking={() => setView('booking')}
-            />
+            {!isAdminAuthenticated ? (
+              <div className="flex items-center justify-center py-20 px-6">
+                <div className="max-w-md w-full bg-white rounded-[2.5rem] p-12 shadow-2xl border border-slate-100 text-center">
+                  <div className="w-16 h-16 bg-[#C5A059]/10 rounded-full flex items-center justify-center mx-auto mb-8 text-[#C5A059]">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                  </div>
+                  <h3 className="text-3xl font-serif mb-2">Acceso Restringido</h3>
+                  <p className="text-slate-400 text-sm mb-10">Introduzca la clave de gestión de Dobao Gourmet</p>
+                  
+                  <form onSubmit={handleAdminLogin} className="space-y-4">
+                    <input 
+                      type="password" 
+                      value={passwordInput}
+                      onChange={(e) => setPasswordInput(e.target.value)}
+                      placeholder="Contraseña" 
+                      className={`w-full bg-slate-50 border-2 rounded-2xl px-6 py-4 text-center text-xl outline-none transition-all ${loginError ? 'border-red-200 focus:border-red-400' : 'border-slate-100 focus:border-[#C5A059]'}`}
+                    />
+                    {loginError && <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest">Clave incorrecta</p>}
+                    <button type="submit" className="w-full bg-black text-white font-bold py-5 rounded-2xl hover:bg-[#C5A059] hover:text-black transition-all uppercase text-xs tracking-[0.2em] shadow-lg">
+                      Entrar al Panel
+                    </button>
+                    <button type="button" onClick={() => setView('booking')} className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-4">Cancelar</button>
+                  </form>
+                </div>
+              </div>
+            ) : (
+              <AdminDashboard 
+                reservations={reservations} 
+                onUpdateStatus={(id, status) => setReservations(prev => prev.map(r => r.id === id ? {...r, status} : r))}
+                onUpdate={(u) => setReservations(prev => prev.map(r => r.id === u.id ? u : r))}
+                onDelete={(id) => setReservations(prev => prev.filter(r => r.id !== id))}
+                onBackToBooking={() => setView('booking')}
+                onLogout={handleLogout}
+              />
+            )}
           </div>
         )}
       </main>
