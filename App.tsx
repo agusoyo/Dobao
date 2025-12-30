@@ -13,7 +13,7 @@ import { es } from 'date-fns/locale';
  * Para usar una foto de tu GitHub, usa este formato:
  * "https://raw.githubusercontent.com/agusoyo/Dobao/main/NOMBRE_DE_TU_FOTO.jpeg"
  */
-const HERO_IMAGE_URL = "IMG_4292.jpeg";
+const HERO_IMAGE_URL = "https://raw.githubusercontent.com/agusoyo/Dobao/main/IMG_4292.jpeg";
 
 type ViewState = 'booking' | 'admin' | 'gallery';
 
