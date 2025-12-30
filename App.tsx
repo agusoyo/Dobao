@@ -50,10 +50,8 @@ const App: React.FC = () => {
 
     if (error) {
       console.error('Error cargando reservas:', error);
-      // Fallback a iniciales si falla la red
       setReservations(INITIAL_RESERVATIONS);
     } else if (data) {
-      // Mapear campos de base de datos a nuestro formato de TypeScript
       const mappedData: Reservation[] = data.map(r => ({
         id: r.id,
         date: r.date,
@@ -92,7 +90,6 @@ const App: React.FC = () => {
     }
   };
 
-  // Fix: Added handleLogout to resolve the "Cannot find name 'handleLogout'" error.
   const handleLogout = () => {
     setIsAdminAuthenticated(false);
   };
@@ -155,7 +152,7 @@ const App: React.FC = () => {
     if (error) {
       alert("Error al procesar la reserva: " + error.message);
     } else {
-      await fetchReservations(); // Refrescar lista
+      await fetchReservations();
       alert("Solicitud recibida. En Dobao Gourmet estamos preparando su propuesta personalizada.");
       setFormData({ 
         name: '', email: '', phone: '', guests: 10, purpose: '',
@@ -169,6 +166,20 @@ const App: React.FC = () => {
     }
     setIsSubmitting(false);
   };
+
+  const ServiceCard = ({ id, label, icon, active, onClick }: { id: keyof AdditionalServices, label: string, icon: string, active: boolean, onClick: () => void }) => (
+    <div 
+      onClick={onClick}
+      className={`cursor-pointer p-4 rounded-xl border transition-all flex flex-col items-center justify-center text-center gap-2 ${
+        active 
+        ? 'bg-[#C5A059]/10 border-[#C5A059] text-[#C5A059]' 
+        : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20'
+      }`}
+    >
+      <span className="text-xl md:text-2xl">{icon}</span>
+      <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider">{label}</span>
+    </div>
+  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#080808] text-slate-200">
@@ -192,55 +203,55 @@ const App: React.FC = () => {
       <main className="flex-1">
         {view === 'booking' && (
           <>
-            <section className="relative min-h-screen w-full flex items-start md:items-center justify-center overflow-hidden pt-64 md:pt-0">
+            <section className="relative min-h-[80vh] w-full flex items-center justify-center overflow-hidden pt-32">
               <img 
                 src={HERO_IMAGE_URL} 
                 alt="Bodega Gourmet" 
-                className="absolute inset-0 w-full h-full object-cover brightness-[1.2] contrast-[1.05]" 
+                className="absolute inset-0 w-full h-full object-cover brightness-[0.7] contrast-[1.1]" 
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20"></div>
+              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-[#080808]"></div>
               
-              <div className="relative z-10 text-center px-6 max-w-5xl mt-8 md:mt-24">
-                <h2 className="text-3xl sm:text-6xl md:text-9xl font-serif text-white mb-6 md:mb-12 leading-[1.2] drop-shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+              <div className="relative z-10 text-center px-6 max-w-5xl">
+                <h2 className="text-4xl sm:text-6xl md:text-8xl font-serif text-white mb-6 leading-tight drop-shadow-2xl">
                   Tu espacio <br className="hidden sm:block"/>
                   <span className="text-[#C5A059] italic">exclusivo en Vigo</span>
                 </h2>
-                <div className="max-w-3xl mx-auto mb-10 md:mb-16 p-6 md:p-12 rounded-[2rem] border border-white/40 bg-white/5 backdrop-blur-sm shadow-2xl">
-                   <p className="text-white text-sm md:text-2xl font-bold leading-relaxed drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">
-                    Desde celebraciones íntimas hasta eventos corporativos de alto nivel. 
+                <div className="max-w-2xl mx-auto mb-10 p-6 rounded-3xl border border-white/20 bg-black/20 backdrop-blur-md shadow-2xl">
+                   <p className="text-white text-base md:text-xl font-light leading-relaxed">
+                    Eventos privados, gastronomía de autor y la mejor selección de vinos en el corazón de la ciudad.
                   </p>
                 </div>
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-10">
-                  <a href="#calendario" className="w-full sm:w-auto bg-[#C5A059] text-black px-12 py-5 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-[0_10px_30px_rgba(197,160,89,0.7)]">
-                    Solicitar Reserva
-                  </a>
-                </div>
+                <a href="#calendario" className="inline-block bg-[#C5A059] text-black px-12 py-5 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-[0_10px_30px_rgba(197,160,89,0.5)]">
+                  Reservar Fecha
+                </a>
               </div>
             </section>
 
             <section id="calendario" className="py-24 px-6 bg-[#080808] scroll-mt-20">
               <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-16 items-start">
-                <div className="lg:col-span-7">
+                <div className="lg:col-span-6">
                   <div className="mb-12">
-                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-6">1. Seleccione Fecha</h3>
-                    <div className="w-16 h-1 bg-[#C5A059] mb-6"></div>
+                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-6">1. El Momento</h3>
+                    <div className="w-16 h-1 bg-[#C5A059] mb-8"></div>
+                    <Calendar 
+                      selectedDate={selectedDate} 
+                      onDateSelect={setSelectedDate} 
+                      reservations={reservations.map(r => ({ date: r.date, slot: r.slot }))} 
+                    />
                   </div>
-                  <Calendar 
-                    selectedDate={selectedDate} 
-                    onDateSelect={setSelectedDate} 
-                    reservations={reservations.map(r => ({ date: r.date, slot: r.slot }))} 
-                  />
                 </div>
 
-                <div className="lg:col-span-5">
-                  <div className={`bg-[#0d0d0d] rounded-[2.5rem] p-8 border border-white/5 transition-all duration-1000 ${!selectedDate ? 'opacity-30 blur-sm pointer-events-none' : 'opacity-100'}`}>
-                    <h3 className="text-2xl md:text-4xl font-serif text-white mb-3">2. Su Evento</h3>
+                <div className="lg:col-span-6">
+                  <div className={`bg-[#0d0d0d] rounded-[3rem] p-8 md:p-12 border border-white/5 transition-all duration-700 ${!selectedDate ? 'opacity-30 blur-sm pointer-events-none' : 'opacity-100'}`}>
+                    <h3 className="text-2xl md:text-4xl font-serif text-white mb-3">2. Detalles</h3>
                     <p className="text-[#C5A059] text-[10px] font-bold uppercase tracking-widest mb-10 border-b border-white/10 pb-6">
                       {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es }) : 'Seleccione una fecha'}
                     </p>
                     
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      <div className="space-y-5">
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                      {/* Turno */}
+                      <div className="space-y-4">
+                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Seleccionar Turno</label>
                         <div className="grid grid-cols-2 gap-4">
                           {[ReservationSlot.MIDDAY, ReservationSlot.NIGHT].map(slot => {
                             const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
@@ -251,7 +262,7 @@ const App: React.FC = () => {
                                 type="button"
                                 disabled={isOccupied}
                                 onClick={() => setSelectedSlot(slot)}
-                                className={`px-4 py-6 rounded-2xl border text-center transition-all ${
+                                className={`px-4 py-5 rounded-2xl border text-center transition-all ${
                                   selectedSlot === slot 
                                     ? 'bg-[#C5A059] border-[#C5A059] text-black font-bold' 
                                     : isOccupied
@@ -259,20 +270,36 @@ const App: React.FC = () => {
                                     : 'bg-transparent border-white/10 text-white hover:border-[#C5A059]/50'
                                 }`}
                               >
-                                {slot === ReservationSlot.MIDDAY ? 'Mediodía' : 'Noche'}
+                                {slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena'}
                               </button>
                             );
                           })}
                         </div>
                       </div>
 
+                      {/* Datos Cliente */}
                       <div className={`space-y-6 ${!selectedSlot ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
-                        <input type="text" required placeholder="Nombre" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                        <input type="email" required placeholder="Email" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-                        <input type="tel" required placeholder="Teléfono" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <input type="text" required placeholder="Su Nombre" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]/50 transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                          <input type="tel" required placeholder="Teléfono" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]/50 transition-all" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                        </div>
+                        <input type="email" required placeholder="Email de contacto" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]/50 transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
                         
-                        <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-5 rounded-2xl hover:bg-white transition-all uppercase tracking-widest">
-                          {isSubmitting ? 'Procesando...' : 'Solicitar Reserva'}
+                        {/* Servicios Extra */}
+                        <div className="pt-4">
+                          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-6">Experiencias y Extras</label>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <ServiceCard id="cleaning" label="Limpieza" icon="🧹" active={formData.services.cleaning} onClick={() => handleServiceToggle('cleaning')} />
+                            <ServiceCard id="vinoteca" label="Vinoteca" icon="🍷" active={formData.services.vinoteca} onClick={() => handleServiceToggle('vinoteca')} />
+                            <ServiceCard id="catering" label="Catering" icon="👨‍🍳" active={formData.services.catering} onClick={() => handleServiceToggle('catering')} />
+                            <ServiceCard id="multimedia" label="Multimedia" icon="📺" active={formData.services.multimedia} onClick={() => handleServiceToggle('multimedia')} />
+                            <ServiceCard id="beerEstrella" label="Estrella" icon="🍺" active={formData.services.beerEstrella} onClick={() => handleServiceToggle('beerEstrella')} />
+                            <ServiceCard id="beer1906" label="1906" icon="🍻" active={formData.services.beer1906} onClick={() => handleServiceToggle('beer1906')} />
+                          </div>
+                        </div>
+
+                        <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-6 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-sm shadow-[0_15px_40px_rgba(197,160,89,0.2)]">
+                          {isSubmitting ? 'Enviando solicitud...' : 'Confirmar Disponibilidad'}
                         </button>
                       </div>
                     </form>
@@ -307,9 +334,9 @@ const App: React.FC = () => {
               <AdminDashboard 
                 reservations={reservations} 
                 onUpdateStatus={handleUpdateStatus}
-                onUpdate={() => {}} // No implementado aquí por brevedad
+                onUpdate={() => {}}
                 onDelete={handleDelete}
-                onImport={() => {}} // Se puede implementar para migraciones
+                onImport={() => {}}
                 onBackToBooking={() => setView('booking')}
                 onLogout={handleLogout}
               />
