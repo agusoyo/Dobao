@@ -15,14 +15,15 @@ import {
   startOfToday
 } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { ReservationSlot } from '../types';
 
 interface CalendarProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
-  reservedDates: string[];
+  reservations: { date: string, slot: ReservationSlot }[];
 }
 
-const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reservedDates }) => {
+const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reservations }) => {
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
   const today = startOfToday();
 
@@ -33,46 +34,50 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserve
 
   const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
-  const isReserved = (date: Date) => {
+  const getDayStatus = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
-    return reservedDates.includes(dateStr);
+    const dayReservations = reservations.filter(r => r.date === dateStr);
+    
+    if (dayReservations.length >= 2) return 'FULL';
+    if (dayReservations.length === 1) return 'PARTIAL';
+    return 'FREE';
   };
 
   const isPast = (date: Date) => isBefore(date, today);
 
   return (
-    <div className="bg-[#1a1a1a] p-6 text-slate-300">
+    <div className="bg-[#1a1a1a] p-8 rounded-[2rem] border border-white/5 shadow-2xl">
       <div className="flex items-center justify-between mb-10">
-        <h3 className="text-2xl font-serif text-white capitalize">
+        <h3 className="text-3xl font-serif text-white capitalize">
           {format(currentMonth, 'MMMM yyyy', { locale: es })}
         </h3>
-        <div className="flex gap-4">
+        <div className="flex gap-3">
           <button 
             onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            className="w-10 h-10 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/5 transition-colors"
+            className="w-12 h-12 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/5 transition-all"
           >
-            <svg className="w-4 h-4 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+            <svg className="w-5 h-5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
           </button>
           <button 
             onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            className="w-10 h-10 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/5 transition-colors"
+            className="w-12 h-12 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/5 transition-all"
           >
-            <svg className="w-4 h-4 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
+            <svg className="w-5 h-5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-2 mb-4">
+      <div className="grid grid-cols-7 gap-3 mb-6">
         {['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'].map(day => (
-          <div key={day} className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-widest py-2">
+          <div key={day} className="text-center text-[10px] font-bold text-slate-500 uppercase tracking-[0.3em] py-2">
             {day}
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-3">
         {calendarDays.map((day, idx) => {
-          const reserved = isReserved(day);
+          const status = getDayStatus(day);
           const past = isPast(day);
           const selected = selectedDate && isSameDay(day, selectedDate);
           const sameMonth = isSameMonth(day, monthStart);
@@ -80,36 +85,38 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserve
           return (
             <button
               key={idx}
-              disabled={reserved || past || !sameMonth}
+              disabled={status === 'FULL' || past || !sameMonth}
               onClick={() => onDateSelect(day)}
               className={`
-                relative h-16 w-full flex flex-col items-center justify-center rounded-2xl transition-all border
+                relative h-20 w-full flex flex-col items-center justify-center rounded-2xl transition-all border duration-300
                 ${!sameMonth ? 'opacity-0 pointer-events-none' : ''}
-                ${past ? 'text-slate-700 border-transparent cursor-not-allowed grayscale' : ''}
-                ${reserved ? 'bg-red-950/20 text-red-700 border-red-900/30 cursor-not-allowed' : 'border-white/5 hover:border-[#C5A059]/50 hover:bg-white/5'}
-                ${selected ? 'bg-[#C5A059] text-black border-[#C5A059] shadow-[0_0_15px_rgba(197,160,89,0.3)] transform scale-105 z-10' : ''}
-                ${!reserved && !past && !selected && sameMonth ? 'text-white' : ''}
+                ${past ? 'text-slate-700 border-transparent cursor-not-allowed' : ''}
+                ${status === 'FULL' ? 'bg-red-950/20 text-red-700 border-red-900/30 cursor-not-allowed' : 'border-white/5 hover:border-[#C5A059]/50 hover:bg-white/5'}
+                ${status === 'PARTIAL' && !selected ? 'border-[#C5A059]/30 bg-[#C5A059]/5' : ''}
+                ${selected ? 'bg-[#C5A059] text-black border-[#C5A059] shadow-[0_0_20px_rgba(197,160,89,0.4)] transform scale-105 z-10' : ''}
+                ${status === 'FREE' && !past && !selected && sameMonth ? 'text-white' : ''}
               `}
             >
-              <span className="text-sm font-medium">{format(day, 'd')}</span>
-              {reserved && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter">Ocupado</span>}
+              <span className="text-lg font-serif">{format(day, 'd')}</span>
+              {status === 'FULL' && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter">Completo</span>}
+              {status === 'PARTIAL' && !selected && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter text-[#C5A059]">1 Turno Libre</span>}
             </button>
           );
         })}
       </div>
 
-      <div className="mt-10 flex flex-wrap gap-6 text-[10px] uppercase font-bold tracking-widest text-slate-500">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-[#C5A059]"></div>
+      <div className="mt-12 pt-8 border-t border-white/5 flex flex-wrap gap-8 text-[10px] uppercase font-bold tracking-widest text-slate-500">
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 rounded-full bg-[#C5A059]"></div>
           <span>Seleccionado</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-red-900/50"></div>
-          <span>No disponible</span>
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 rounded-full border border-[#C5A059]/30 bg-[#C5A059]/5"></div>
+          <span>Parcialmente libre</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-white/10"></div>
-          <span>Disponible</span>
+        <div className="flex items-center gap-3">
+          <div className="w-3 h-3 rounded-full bg-red-900/50"></div>
+          <span>Agotado</span>
         </div>
       </div>
     </div>

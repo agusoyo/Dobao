@@ -1,5 +1,5 @@
 
-import { Reservation, ReservationStatus, TxokoConfig } from './types';
+import { Reservation, ReservationStatus, TxokoConfig, ReservationSlot } from './types';
 
 export const TXOKO_CONFIG: TxokoConfig = {
   name: "Dobao Gourmet",
@@ -12,6 +12,7 @@ export const INITIAL_RESERVATIONS: Reservation[] = [
   {
     id: '1',
     date: '2025-05-20',
+    slot: ReservationSlot.NIGHT,
     customerName: 'Manuel Souto',
     email: 'manuel@example.com',
     phone: '600123456',
@@ -24,6 +25,7 @@ export const INITIAL_RESERVATIONS: Reservation[] = [
   {
     id: '2',
     date: '2025-05-25',
+    slot: ReservationSlot.MIDDAY,
     customerName: 'Carmen Rey',
     email: 'carmen@example.com',
     phone: '655987321',

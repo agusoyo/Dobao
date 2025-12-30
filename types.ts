@@ -1,4 +1,9 @@
 
+export enum ReservationSlot {
+  MIDDAY = 'MIDDAY',
+  NIGHT = 'NIGHT'
+}
+
 export interface AdditionalServices {
   catering: boolean;
   cleaning: boolean;
@@ -9,6 +14,7 @@ export interface AdditionalServices {
 export interface Reservation {
   id: string;
   date: string;
+  slot: ReservationSlot;
   customerName: string;
   email: string;
   phone: string;

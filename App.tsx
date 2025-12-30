@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Reservation, ReservationStatus, AdditionalServices } from './types';
+import { Reservation, ReservationStatus, AdditionalServices, ReservationSlot } from './types';
 import { INITIAL_RESERVATIONS, TXOKO_CONFIG } from './constants';
 import Calendar from './components/Calendar';
 import AdminDashboard from './components/AdminDashboard';
@@ -13,10 +13,11 @@ type ViewState = 'booking' | 'admin' | 'gallery';
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('booking');
   const [reservations, setReservations] = useState<Reservation[]>(() => {
-    const saved = localStorage.getItem('txoko_reservations_v2');
+    const saved = localStorage.getItem('txoko_reservations_v3');
     return saved ? JSON.parse(saved) : INITIAL_RESERVATIONS;
   });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<ReservationSlot | null>(null);
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', guests: 10, purpose: '',
     services: { catering: false, cleaning: true, multimedia: false, vinoteca: false }
@@ -24,13 +25,24 @@ const App: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('txoko_reservations_v2', JSON.stringify(reservations));
+    localStorage.setItem('txoko_reservations_v3', JSON.stringify(reservations));
     window.scrollTo(0, 0);
   }, [reservations, view]);
 
-  const reservedDates = reservations
-    .filter(r => r.status !== ReservationStatus.CANCELLED)
-    .map(r => r.date);
+  // Reset slot when date changes
+  useEffect(() => {
+    setSelectedSlot(null);
+  }, [selectedDate]);
+
+  const getOccupiedSlotsForDate = (date: Date | null) => {
+    if (!date) return [];
+    const dateStr = format(date, 'yyyy-MM-dd');
+    return reservations
+      .filter(r => r.date === dateStr && r.status !== ReservationStatus.CANCELLED)
+      .map(r => r.slot);
+  };
+
+  const occupiedSlots = getOccupiedSlotsForDate(selectedDate);
 
   const handleServiceToggle = (service: keyof AdditionalServices) => {
     setFormData(prev => ({
@@ -41,12 +53,13 @@ const App: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedDate) return;
+    if (!selectedDate || !selectedSlot) return;
     setIsSubmitting(true);
     
     const newReservation: Reservation = {
       id: Math.random().toString(36).substr(2, 9),
       date: format(selectedDate, 'yyyy-MM-dd'),
+      slot: selectedSlot,
       customerName: formData.name,
       email: formData.email,
       phone: formData.phone,
@@ -59,12 +72,13 @@ const App: React.FC = () => {
 
     setTimeout(() => {
       setReservations(prev => [...prev, newReservation]);
-      alert("Solicitud recibida. En Dobao Gourmet estamos preparando su propuesta personalizada.");
+      alert("Solicitud recibida. En Dobao Gourmet estamos preparando su propuesta personalizada para el turno seleccionado.");
       setFormData({ 
         name: '', email: '', phone: '', guests: 10, purpose: '',
         services: { catering: false, cleaning: true, multimedia: false, vinoteca: false }
       });
       setSelectedDate(null);
+      setSelectedSlot(null);
       setIsSubmitting(false);
     }, 1200);
   };
@@ -105,7 +119,7 @@ const App: React.FC = () => {
                   <span className="text-[#C5A059] italic text-5xl md:text-8xl">privado en Vigo</span>
                 </h2>
                 <p className="text-white max-w-2xl mx-auto mb-10 text-lg md:text-xl font-medium leading-relaxed drop-shadow-lg bg-black/20 backdrop-blur-[4px] p-6 rounded-3xl border border-white/10">
-                  La ubicación más exclusiva para sus reuniones de negocios, eventos corporativos o celebraciones familiares más íntimas. 
+                  Reserva tu turno exclusivo para almuerzos o cenas privadas. 
                   Un entorno rodeado de nuestra mejor selección vinícola para garantizar el éxito de cada encuentro.
                 </p>
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6">
@@ -119,76 +133,101 @@ const App: React.FC = () => {
               </div>
             </section>
 
-            <section id="servicios" className="py-32 px-6 bg-[#0c0c0c]">
-              <div className="max-w-7xl mx-auto">
-                <div className="text-center mb-20">
-                  <h3 className="text-4xl font-serif mb-4 text-white">Servicios de Élite</h3>
-                  <div className="h-px w-20 bg-[#C5A059] mx-auto"></div>
-                </div>
-                
-                <div className="grid md:grid-cols-4 gap-8">
-                  {[
-                    { id: 'vinoteca', title: 'Cava Privada', desc: 'Catas exclusivas y maridaje profesional para sus eventos más exigentes.', icon: '🍷' },
-                    { id: 'catering', title: 'Alta Cocina', desc: 'Gastronomía de autor adaptada a cada reunión familiar o de trabajo.', icon: '🍽️' },
-                    { id: 'multimedia', title: 'Corporativo', desc: 'Equipamiento de vanguardia para presentaciones y juntas comerciales.', icon: '📽️' },
-                    { id: 'cleaning', title: 'Excelencia', desc: 'Atención personalizada y discreción absoluta en cada detalle.', icon: '✨' }
-                  ].map(s => (
-                    <div key={s.id} className="bg-[#141414] p-8 rounded-3xl border border-white/5 hover:border-[#C5A059]/30 transition-all group">
-                      <div className="text-4xl mb-6">{s.icon}</div>
-                      <h4 className="text-white font-bold uppercase text-xs tracking-widest mb-3 group-hover:text-[#C5A059] transition-colors">{s.title}</h4>
-                      <p className="text-slate-500 text-sm leading-relaxed">{s.desc}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </section>
-
             <section id="calendario" className="py-32 px-6 bg-black">
               <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-16 items-start">
                 <div className="lg:col-span-7">
-                  <Calendar selectedDate={selectedDate} onDateSelect={setSelectedDate} reservedDates={reservedDates} />
+                  <div className="mb-8">
+                    <h3 className="text-4xl font-serif text-white mb-2">1. Seleccione Fecha</h3>
+                    <p className="text-slate-400 font-light">Disponemos de dos turnos diarios independientes.</p>
+                  </div>
+                  <Calendar 
+                    selectedDate={selectedDate} 
+                    onDateSelect={setSelectedDate} 
+                    reservations={reservations.map(r => ({ date: r.date, slot: r.slot }))} 
+                  />
                 </div>
 
                 <div className="lg:col-span-5">
                   <div className={`bg-[#141414] rounded-3xl p-10 border border-white/5 transition-all duration-700 ${!selectedDate ? 'opacity-30 blur-sm pointer-events-none scale-95' : 'opacity-100'}`}>
-                    <h3 className="text-2xl font-serif text-white mb-6">Detalles del Evento</h3>
+                    <h3 className="text-2xl font-serif text-white mb-2">2. Configure su Evento</h3>
+                    <p className="text-[#C5A059] text-[10px] font-bold uppercase tracking-widest mb-8">
+                      {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es }) : ''}
+                    </p>
                     
                     <form onSubmit={handleSubmit} className="space-y-6">
-                      <div className="grid gap-4">
-                        <input type="text" required placeholder="Nombre o Razón Social" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:border-[#C5A059] outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                      <div className="space-y-4">
+                        <p className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Turno Deseado</p>
                         <div className="grid grid-cols-2 gap-4">
-                          <input type="email" required placeholder="Email de contacto" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:border-[#C5A059] outline-none" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-                          <input type="tel" required placeholder="Teléfono" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:border-[#C5A059] outline-none" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                          <button
+                            type="button"
+                            disabled={occupiedSlots.includes(ReservationSlot.MIDDAY)}
+                            onClick={() => setSelectedSlot(ReservationSlot.MIDDAY)}
+                            className={`px-4 py-5 rounded-xl border text-center transition-all ${
+                              selectedSlot === ReservationSlot.MIDDAY 
+                                ? 'bg-[#C5A059] border-[#C5A059] text-black font-bold' 
+                                : occupiedSlots.includes(ReservationSlot.MIDDAY)
+                                ? 'bg-red-950/20 border-red-900/30 text-red-700 cursor-not-allowed opacity-50'
+                                : 'bg-transparent border-white/10 text-white hover:border-[#C5A059]/50'
+                            }`}
+                          >
+                            <div className="text-xs uppercase tracking-widest mb-1">Mediodía</div>
+                            <div className="text-[10px] opacity-60">12:00h - 16:00h</div>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={occupiedSlots.includes(ReservationSlot.NIGHT)}
+                            onClick={() => setSelectedSlot(ReservationSlot.NIGHT)}
+                            className={`px-4 py-5 rounded-xl border text-center transition-all ${
+                              selectedSlot === ReservationSlot.NIGHT 
+                                ? 'bg-[#C5A059] border-[#C5A059] text-black font-bold' 
+                                : occupiedSlots.includes(ReservationSlot.NIGHT)
+                                ? 'bg-red-950/20 border-red-900/30 text-red-700 cursor-not-allowed opacity-50'
+                                : 'bg-transparent border-white/10 text-white hover:border-[#C5A059]/50'
+                            }`}
+                          >
+                            <div className="text-xs uppercase tracking-widest mb-1">Noche</div>
+                            <div className="text-[10px] opacity-60">20:00h - 00:00h</div>
+                          </button>
                         </div>
                       </div>
 
-                      <div className="space-y-4 pt-4 border-t border-white/5">
-                        <p className="text-[10px] uppercase font-bold text-[#C5A059] tracking-widest">Añadir a la Experiencia</p>
-                        <div className="grid grid-cols-2 gap-3">
-                          {[
-                            { id: 'vinoteca', label: 'Cava de Vinos' },
-                            { id: 'catering', label: 'Catering Gourmet' },
-                            { id: 'multimedia', label: 'Pack Multimedia' },
-                            { id: 'cleaning', label: 'Servicio Limpieza' }
-                          ].map(s => (
-                            <button
-                              key={s.id}
-                              type="button"
-                              onClick={() => handleServiceToggle(s.id as keyof AdditionalServices)}
-                              className={`flex items-center justify-between px-4 py-3 rounded-xl border text-[10px] font-bold uppercase tracking-tighter transition-all ${formData.services[s.id as keyof AdditionalServices] ? 'bg-[#C5A059] border-[#C5A059] text-black' : 'bg-transparent border-white/10 text-slate-500'}`}
-                            >
-                              {s.label}
-                              {formData.services[s.id as keyof AdditionalServices] && <span>✓</span>}
-                            </button>
-                          ))}
+                      <div className={`space-y-6 transition-all duration-500 ${!selectedSlot ? 'opacity-20 pointer-events-none blur-[2px]' : 'opacity-100'}`}>
+                        <div className="grid gap-4">
+                          <input type="text" required placeholder="Nombre o Razón Social" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:border-[#C5A059] outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                          <div className="grid grid-cols-2 gap-4">
+                            <input type="email" required placeholder="Email" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:border-[#C5A059] outline-none" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                            <input type="tel" required placeholder="Teléfono" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:border-[#C5A059] outline-none" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                          </div>
                         </div>
+
+                        <div className="space-y-4 pt-4 border-t border-white/5">
+                          <p className="text-[10px] uppercase font-bold text-[#C5A059] tracking-widest">Servicios Adicionales</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            {[
+                              { id: 'vinoteca', label: 'Cava de Vinos' },
+                              { id: 'catering', label: 'Catering Gourmet' },
+                              { id: 'multimedia', label: 'Pack Multimedia' },
+                              { id: 'cleaning', label: 'Servicio Limpieza' }
+                            ].map(s => (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => handleServiceToggle(s.id as keyof AdditionalServices)}
+                                className={`flex items-center justify-between px-4 py-3 rounded-xl border text-[10px] font-bold uppercase tracking-tighter transition-all ${formData.services[s.id as keyof AdditionalServices] ? 'bg-[#C5A059] border-[#C5A059] text-black' : 'bg-transparent border-white/10 text-slate-500'}`}
+                              >
+                                {s.label}
+                                {formData.services[s.id as keyof AdditionalServices] && <span>✓</span>}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <textarea required placeholder="Propósito del evento..." className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:border-[#C5A059] outline-none h-24 resize-none" value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
+
+                        <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-5 rounded-xl hover:bg-white transition-all uppercase text-xs tracking-[0.2em] shadow-xl">
+                          {isSubmitting ? 'Procesando...' : 'Confirmar Solicitud de Reserva'}
+                        </button>
                       </div>
-
-                      <textarea required placeholder="Describa su evento (Reunión comercial, almuerzo familiar, presentación...)" className="w-full bg-white/5 border border-white/5 rounded-xl px-5 py-4 text-white focus:border-[#C5A059] outline-none h-24 resize-none" value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
-
-                      <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-5 rounded-xl hover:bg-white transition-all uppercase text-xs tracking-[0.2em]">
-                        {isSubmitting ? 'Procesando...' : 'Solicitar Propuesta Privada'}
-                      </button>
                     </form>
                   </div>
                 </div>
