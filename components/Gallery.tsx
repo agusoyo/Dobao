@@ -28,7 +28,7 @@ const IMAGES = [
     desc: "Nuestra cava climatizada con una selección exclusiva para nuestros socios."
   },
   {
-    fileName: "IMG_4295.jpg",
+    fileName: "IMG_4293.jpeg",
     title: "Cocina de Autor",
     desc: "Equipamiento profesional de alta gama en un entorno verde esmeralda."
   },
