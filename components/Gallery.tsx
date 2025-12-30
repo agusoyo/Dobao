@@ -13,17 +13,17 @@ const GITHUB_BASE_URL = "https://raw.githubusercontent.com/agusoyo/Dobao/main/";
 
 const IMAGES = [
   {
-    fileName: "IMG_4292.jpeg", // Tu primera foto confirmada
+    fileName: "IMG_4297.jpeg", // Tu primera foto confirmada
     title: "Zona Multimedia",
     desc: "Pantalla de gran formato y sofás de piel para una experiencia de cine privada."
   },
   {
-    fileName: "IMG_4293.jpeg", 
+    fileName: "IMG_4292.jpeg", 
     title: "La Mesa Imperial",
     desc: "Iluminación de diseño y madera noble para banquetes inolvidables."
   },
   {
-    fileName: "IMG_4294.jpeg",
+    fileName: "IMG_4293.jpeg",
     title: "La Vinoteca",
     desc: "Nuestra cava climatizada con una selección exclusiva para nuestros socios."
   },
