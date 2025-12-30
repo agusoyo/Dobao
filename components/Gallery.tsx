@@ -33,22 +33,22 @@ const IMAGES = [
     desc: "Equipamiento profesional de alta gama en un entorno verde esmeralda."
   },
   {
-    fileName: "IMG_4295.jpg",
+    fileName: "IMG_4295.jpeg",
     title: "Barra y Servicio",
     desc: "Zona de barra completa con tirador de cerveza y servicio de cafetería."
   },
   {
-    fileName: "IMG_4295.jpg",
+    fileName: "IMG_4295.jpeg",
     title: "Detalles Gourmet",
     desc: "Cristalería y menaje seleccionados para elevar cada degustación."
   },
   {
-    fileName: "IMG_4295.jpg",
+    fileName: "IMG_4295.jpge",
     title: "Rincón de Lectura",
     desc: "Espacios de confort diseñados para la sobremesa y la confidencia."
   },
   {
-    fileName: "IMG_4295.jpg",
+    fileName: "IMG_4295.jpeg",
     title: "Plano Abierto",
     desc: "Arquitectura diáfana que integra cocina y comedor en un solo ambiente."
   }
