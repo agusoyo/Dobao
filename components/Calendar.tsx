@@ -2,17 +2,13 @@
 import React from 'react';
 import { 
   format, 
-  startOfMonth, 
   endOfMonth, 
-  startOfWeek, 
   endOfWeek, 
   eachDayOfInterval, 
   isSameMonth, 
   isSameDay, 
   addMonths, 
-  subMonths,
   isBefore,
-  startOfToday
 } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { ReservationSlot } from '../types';
@@ -25,11 +21,26 @@ interface CalendarProps {
 
 const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reservations }) => {
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
-  const today = startOfToday();
 
-  const monthStart = startOfMonth(currentMonth);
+  // Fix: Manual implementation of startOfToday to avoid missing export error on line 15
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Fix: Manual implementation of startOfMonth to avoid missing export error on line 5
+  const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+
+  // Fix: Manual implementation of startOfWeek (Monday start) to avoid missing export error on line 7
+  const getStartOfWeek = (date: Date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - (day === 0 ? 6 : day - 1);
+    const result = new Date(d.setDate(diff));
+    result.setHours(0, 0, 0, 0);
+    return result;
+  };
+
+  const startDate = getStartOfWeek(monthStart);
   const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
 
   const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
@@ -53,7 +64,8 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserva
         </h3>
         <div className="flex gap-3">
           <button 
-            onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+            // Fix: Use addMonths with -1 instead of subMonths to avoid missing export error on line 13
+            onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
             className="w-12 h-12 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/5 transition-all"
           >
             <svg className="w-5 h-5 text-[#C5A059]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>

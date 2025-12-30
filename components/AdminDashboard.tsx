@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useRef } from 'react';
 import { Reservation, ReservationStatus, ReservationSlot } from '../types';
-import { format, getYear, getMonth, parseISO } from 'date-fns';
+import { format, getYear, getMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -24,9 +24,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Fix: Use standard new Date() as a fallback for missing parseISO export
+  const parseDate = (dateStr: string) => new Date(dateStr);
+
   const filteredReservations = useMemo(() => {
     return reservations.filter(res => {
-      const resDate = parseISO(res.date);
+      const resDate = parseDate(res.date);
       const matchYear = filterYear === 'all' || getYear(resDate).toString() === filterYear;
       const matchMonth = filterMonth === 'all' || getMonth(resDate).toString() === filterMonth;
       return matchYear && matchMonth;
@@ -36,7 +39,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const yearOptions = useMemo(() => {
     const years = new Set<number>();
     years.add(new Date().getFullYear());
-    reservations.forEach(r => years.add(getYear(parseISO(r.date))));
+    reservations.forEach(r => years.add(getYear(parseDate(r.date))));
     return Array.from(years).sort((a, b) => b - a);
   }, [reservations]);
 
@@ -83,7 +86,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleExportExcel = () => {
     try {
       const dataToExport = filteredReservations.map(res => ({
-        Fecha: format(parseISO(res.date), 'dd/MM/yyyy'),
+        Fecha: format(parseDate(res.date), 'dd/MM/yyyy'),
         Turno: getSlotLabel(res.slot),
         Cliente: res.customerName,
         Email: res.email,
@@ -129,7 +132,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 37);
 
       const rows = filteredReservations.map(res => [
-        format(parseISO(res.date), 'dd/MM/yyyy'),
+        format(parseDate(res.date), 'dd/MM/yyyy'),
         res.slot === ReservationSlot.MIDDAY ? 'Mediodía' : 'Noche',
         res.customerName,
         res.phone,
@@ -236,7 +239,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {filteredReservations.map((res) => (
                 <tr key={res.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="px-5 md:px-8 py-5 md:py-6">
-                    <div className="font-bold text-slate-900 text-xs md:text-base">{format(parseISO(res.date), 'dd MMM yy', { locale: es })}</div>
+                    <div className="font-bold text-slate-900 text-xs md:text-base">{format(parseDate(res.date), 'dd MMM yy', { locale: es })}</div>
                     <div className="text-[8px] md:text-[10px] font-bold text-[#C5A059] uppercase tracking-wider mt-0.5 md:mt-1">{res.slot === ReservationSlot.MIDDAY ? 'Medio' : 'Noche'}</div>
                   </td>
                   <td className="px-5 md:px-8 py-5 md:py-6">

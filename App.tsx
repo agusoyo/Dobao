@@ -8,6 +8,13 @@ import Gallery from './components/Gallery';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+/**
+ * 🖼️ CAMBIAR FOTO PRINCIPAL:
+ * Para usar una foto de tu GitHub, usa este formato:
+ * "https://raw.githubusercontent.com/agusoyo/Dobao/main/NOMBRE_DE_TU_FOTO.jpeg"
+ */
+const HERO_IMAGE_URL = "IMG_4292.jpeg";
+
 type ViewState = 'booking' | 'admin' | 'gallery';
 
 const App: React.FC = () => {
@@ -147,9 +154,12 @@ const App: React.FC = () => {
           <>
             <section className="relative min-h-screen w-full flex items-start md:items-center justify-center overflow-hidden pt-64 md:pt-0">
               <img 
-                src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=2070&auto=format&fit=crop" 
+                src={HERO_IMAGE_URL} 
                 alt="Bodega Gourmet" 
                 className="absolute inset-0 w-full h-full object-cover brightness-[0.4] scale-105" 
+                onError={(e) => {
+                   (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=2070";
+                }}
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black via-black/30 to-black"></div>
               
