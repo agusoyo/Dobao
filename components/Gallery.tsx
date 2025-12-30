@@ -43,12 +43,12 @@ const IMAGES = [
     desc: "Cristalería y menaje seleccionados para elevar cada degustación."
   },
   {
-    fileName: "IMG_4297.jpg",
+    fileName: "IMG_4295.jpg",
     title: "Rincón de Lectura",
     desc: "Espacios de confort diseñados para la sobremesa y la confidencia."
   },
   {
-    fileName: "IMG_4298.jpg",
+    fileName: "IMG_4295.jpg",
     title: "Plano Abierto",
     desc: "Arquitectura diáfana que integra cocina y comedor en un solo ambiente."
   }
