@@ -43,7 +43,7 @@ const IMAGES = [
     desc: "Cristalería y menaje seleccionados para elevar cada degustación."
   },
   {
-    fileName: "IMG_4295.jpge",
+    fileName: "IMG_4295.jpeg",
     title: "Rincón de Lectura",
     desc: "Espacios de confort diseñados para la sobremesa y la confidencia."
   },
