@@ -43,57 +43,66 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
   const handleExportExcel = () => {
-    const dataToExport = filteredReservations.map(res => ({
-      Fecha: format(parseISO(res.date), 'dd/MM/yyyy'),
-      Turno: getSlotLabel(res.slot),
-      Cliente: res.customerName,
-      Email: res.email,
-      Teléfono: res.phone,
-      Invitados: res.guests,
-      Propósito: res.purpose,
-      Estado: res.status,
-      Servicios: Object.entries(res.services)
-        .filter(([_, value]) => value)
-        .map(([key, _]) => key)
-        .join(', ')
-    }));
+    try {
+      const dataToExport = filteredReservations.map(res => ({
+        Fecha: format(parseISO(res.date), 'dd/MM/yyyy'),
+        Turno: getSlotLabel(res.slot),
+        Cliente: res.customerName,
+        Email: res.email,
+        Teléfono: res.phone,
+        Invitados: res.guests,
+        Propósito: res.purpose,
+        Estado: res.status,
+        Servicios: Object.entries(res.services)
+          .filter(([_, value]) => value)
+          .map(([key, _]) => key)
+          .join(', ')
+      }));
 
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Reservas");
-    XLSX.writeFile(workbook, `Reservas_Dobao_Gourmet_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+      const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Reservas");
+      XLSX.writeFile(workbook, `Reservas_Dobao_Gourmet_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+    } catch (error) {
+      console.error("Error al exportar Excel:", error);
+      alert("Hubo un error al generar el archivo Excel.");
+    }
   };
 
   const handleExportPDF = () => {
-    const doc = new jsPDF();
-    
-    // Header styling
-    doc.setFontSize(22);
-    doc.setTextColor(197, 160, 89); // Gold color
-    doc.text("Dobao Gourmet", 14, 20);
-    
-    doc.setFontSize(12);
-    doc.setTextColor(100);
-    doc.text("Listado de Reservas Privadas", 14, 30);
-    doc.text(`Fecha de generación: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 37);
+    try {
+      const doc = new jsPDF();
+      
+      doc.setFontSize(22);
+      doc.setTextColor(197, 160, 89);
+      doc.text("Dobao Gourmet", 14, 20);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(100);
+      doc.text("Listado de Reservas Privadas", 14, 30);
+      doc.text(`Generado: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 37);
 
-    const rows = filteredReservations.map(res => [
-      format(parseISO(res.date), 'dd/MM/yyyy'),
-      res.slot === ReservationSlot.MIDDAY ? 'Mediodía' : 'Noche',
-      res.customerName,
-      res.phone,
-      res.status
-    ]);
+      const rows = filteredReservations.map(res => [
+        format(parseISO(res.date), 'dd/MM/yyyy'),
+        res.slot === ReservationSlot.MIDDAY ? 'Mediodía' : 'Noche',
+        res.customerName,
+        res.phone,
+        res.status
+      ]);
 
-    autoTable(doc, {
-      startY: 45,
-      head: [['Fecha', 'Turno', 'Cliente', 'Teléfono', 'Estado']],
-      body: rows,
-      headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255] },
-      alternateRowStyles: { fillColor: [250, 250, 250] },
-    });
+      autoTable(doc, {
+        startY: 45,
+        head: [['Fecha', 'Turno', 'Cliente', 'Teléfono', 'Estado']],
+        body: rows,
+        headStyles: { fillColor: [20, 20, 20], textColor: [255, 255, 255] },
+        alternateRowStyles: { fillColor: [250, 250, 250] },
+      });
 
-    doc.save(`Reservas_Dobao_Gourmet_${format(new Date(), 'yyyyMMdd')}.pdf`);
+      doc.save(`Reservas_Dobao_Gourmet_${format(new Date(), 'yyyyMMdd')}.pdf`);
+    } catch (error) {
+      console.error("Error al exportar PDF:", error);
+      alert("Hubo un error al generar el archivo PDF.");
+    }
   };
 
   return (
@@ -110,12 +119,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
 
         <div className="flex flex-wrap gap-4 items-center">
-          {/* Export Buttons */}
-          <div className="flex gap-2 mr-4 bg-white p-2 rounded-2xl border border-slate-200">
+          <div className="flex gap-2 mr-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
             <button 
               onClick={handleExportExcel}
               className="p-2 hover:bg-green-50 rounded-xl transition-colors text-green-700 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider"
-              title="Exportar a Excel"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               Excel
@@ -124,15 +131,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <button 
               onClick={handleExportPDF}
               className="p-2 hover:bg-red-50 rounded-xl transition-colors text-red-700 flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider"
-              title="Exportar a PDF"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 9h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1m-3 4h1m1 0h1m1 0h1" /></svg>
               PDF
             </button>
           </div>
 
-          {/* Filters */}
-          <div className="flex gap-4 bg-white p-3 rounded-2xl border border-slate-200">
+          <div className="flex gap-4 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
             <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="bg-slate-50 border-none text-xs font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
               <option value="all">Años</option>
               {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
