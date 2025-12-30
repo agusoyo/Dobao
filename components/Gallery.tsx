@@ -18,7 +18,7 @@ const IMAGES = [
     desc: "Pantalla de gran formato y sofás de piel para una experiencia de cine privada."
   },
   {
-    fileName: "foto2.jpg", 
+    fileName: "IMG_4293.jpeg", 
     title: "La Mesa Imperial",
     desc: "Iluminación de diseño y madera noble para banquetes inolvidables."
   },

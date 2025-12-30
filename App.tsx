@@ -156,29 +156,31 @@ const App: React.FC = () => {
               <img 
                 src={HERO_IMAGE_URL} 
                 alt="Bodega Gourmet" 
-                className="absolute inset-0 w-full h-full object-cover brightness-[0.4] scale-105" 
+                className="absolute inset-0 w-full h-full object-cover brightness-[1.1] contrast-[1.05] scale-100 transition-all duration-1000" 
                 onError={(e) => {
                    (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?q=80&w=2070";
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black via-black/30 to-black"></div>
+              {/* Degradados mínimos para permitir máxima visibilidad de la foto */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/40"></div>
               
               <div className="relative z-10 text-center px-6 max-w-5xl mt-8 md:mt-24">
-                <h2 className="text-3xl sm:text-6xl md:text-9xl font-serif text-white mb-6 md:mb-12 leading-[1.2] md:leading-[1.1] drop-shadow-2xl">
+                <h2 className="text-3xl sm:text-6xl md:text-9xl font-serif text-white mb-6 md:mb-12 leading-[1.2] md:leading-[1.1] drop-shadow-[0_4px_10px_rgba(0,0,0,0.9)]">
                   Tu espacio <br className="hidden sm:block"/>
                   <span className="text-[#C5A059] italic text-3xl sm:text-6xl md:text-9xl">exclusivo en Vigo</span>
                 </h2>
-                <div className="max-w-3xl mx-auto mb-10 md:mb-16 p-6 md:p-12 rounded-[2rem] md:rounded-[3rem] border border-white/10 bg-black/60 backdrop-blur-2xl shadow-2xl">
-                   <p className="text-slate-300 text-sm md:text-2xl font-light leading-relaxed">
+                {/* Contenedor de texto luminoso y cristalino */}
+                <div className="max-w-3xl mx-auto mb-10 md:mb-16 p-6 md:p-12 rounded-[2rem] md:rounded-[3rem] border border-white/40 bg-white/10 backdrop-blur-lg shadow-2xl">
+                   <p className="text-white text-sm md:text-2xl font-bold leading-relaxed drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]">
                     Desde celebraciones íntimas hasta eventos corporativos de alto nivel. 
                     Privacidad y excelencia gastronómica en un entorno sofisticado diseñado para el éxito.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 md:gap-10">
-                  <a href="#calendario" className="w-full sm:w-auto bg-[#C5A059] text-black px-12 py-5 md:py-7 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-[0_15px_40px_rgba(197,160,89,0.4)] text-[10px] md:text-xs">
+                  <a href="#calendario" className="w-full sm:w-auto bg-[#C5A059] text-black px-12 py-5 md:py-7 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-[0_10px_30px_rgba(197,160,89,0.6)] text-[10px] md:text-xs">
                     Solicitar Reserva
                   </a>
-                  <button onClick={() => setView('gallery')} className="w-full sm:w-auto text-white backdrop-blur-xl bg-white/5 border border-white/20 px-12 py-5 md:py-7 rounded-full font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all text-[10px] md:text-xs">
+                  <button onClick={() => setView('gallery')} className="w-full sm:w-auto text-white backdrop-blur-xl bg-white/20 border border-white/40 px-12 py-5 md:py-7 rounded-full font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all text-[10px] md:text-xs shadow-lg">
                     Explorar el Espacio
                   </button>
                 </div>
