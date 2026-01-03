@@ -5,7 +5,7 @@ const GITHUB_BASE_URL = "https://raw.githubusercontent.com/agusoyo/Dobao/main/";
 
 const IMAGES = [
     {
-    fileName: "Escaparate Dobao.jpeg", 
+    fileName: "Escaparate Dobao.jpg", 
     title: "Escaparate del Doabo Gourmet",
     desc: "Cuando la experiencia se convierte en Arte."
   },
