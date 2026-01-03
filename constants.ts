@@ -3,7 +3,7 @@ import { Reservation, ReservationStatus, TxokoConfig, ReservationSlot } from './
 
 export const TXOKO_CONFIG: TxokoConfig = {
   name: "Dobao Gourmet",
-  address: "Rúa do Príncipe 12, Vigo",
+  address: "Álvaro Cunqueiro - Vigo",
   maxCapacity: 35,
   pricePerDay: 180
 };

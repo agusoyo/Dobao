@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Reservation, ReservationStatus, AdditionalServices, ReservationSlot } from './types';
-import { INITIAL_RESERVATIONS } from './constants';
+import { INITIAL_RESERVATIONS, TXOKO_CONFIG } from './constants';
 import Calendar from './components/Calendar';
 import AdminDashboard from './components/AdminDashboard';
 import Gallery from './components/Gallery';
@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<ReservationSlot | null>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', guests: 10, purpose: '',
     services: { 
@@ -153,7 +154,7 @@ const App: React.FC = () => {
       alert("Error al procesar la reserva: " + error.message);
     } else {
       await fetchReservations();
-      alert("Solicitud recibida. En Dobao Gourmet estamos preparando su propuesta personalizada.");
+      setShowSuccessModal(true); // Mostrar confirmación visual
       setFormData({ 
         name: '', email: '', phone: '', guests: 10, purpose: '',
         services: { 
@@ -189,7 +190,9 @@ const App: React.FC = () => {
             <div className="w-8 h-8 md:w-12 md:h-12 border-2 border-[#C5A059] rounded-full flex items-center justify-center text-[#C5A059] font-serif text-sm md:text-xl font-bold italic">DG</div>
             <div>
               <h1 className="text-[10px] md:text-2xl font-bold text-white tracking-[0.1em] md:tracking-widest uppercase font-serif leading-none">DOBAO GOURMET</h1>
-              <span className="text-[6px] md:text-[9px] text-[#C5A059] font-bold uppercase tracking-[0.3em] md:tracking-[0.4em] block mt-0.5 md:mt-1">Vigo · Experiencia Privada</span>
+              <span className="text-[6px] md:text-[9px] text-[#C5A059] font-bold uppercase tracking-[0.1em] md:tracking-[0.2em] block mt-0.5 md:mt-1">
+                {TXOKO_CONFIG.address} · <a href="tel:+34689204786" className="hover:text-white transition-colors">+34 689 20 47 86</a>
+              </span>
             </div>
           </div>
           <nav className="flex gap-3 md:gap-10">
@@ -200,6 +203,28 @@ const App: React.FC = () => {
         </div>
       </header>
 
+      {/* Modal de éxito personalizado */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-[#141414] border border-[#C5A059]/30 p-10 md:p-16 rounded-[3rem] max-w-lg w-full text-center shadow-[0_0_100px_rgba(197,160,89,0.15)] animate-in zoom-in-95 duration-500">
+            <div className="w-20 h-20 bg-[#C5A059] rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(197,160,89,0.4)]">
+              <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
+            </div>
+            <h3 className="text-3xl font-serif text-white mb-4">Solicitud Recibida</h3>
+            <p className="text-slate-400 mb-10 leading-relaxed">
+              Gracias por confiar en <strong>Dobao Gourmet</strong>. <br/>
+              Hemos recibido sus detalles y nos pondremos en contacto con usted en las próximas 24 horas para personalizar su experiencia.
+            </p>
+            <button 
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full bg-[#C5A059] text-black font-bold py-5 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-xs"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
+
       <main className="flex-1">
         {view === 'booking' && (
           <>
@@ -207,7 +232,7 @@ const App: React.FC = () => {
               <img 
                 src={HERO_IMAGE_URL} 
                 alt="Bodega Gourmet" 
-                className="absolute inset-0 w-full h-full object-cover brightness-[1.1] contrast-[1.0] transition-all duration-1000" 
+                className="absolute inset-0 w-full h-full object-cover brightness-[1.2] contrast-[1.0] transition-all duration-1000" 
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#080808]"></div>
               
@@ -231,8 +256,8 @@ const App: React.FC = () => {
               <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-10 md:gap-16 items-start">
                 {/* Columna 1: El Momento */}
                 <div className="lg:col-span-6 flex flex-col">
-                  <div className="mb-10">
-                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-4">1. El Momento</h3>
+                  <div className="mb-10 h-16 md:h-24 flex flex-col justify-end">
+                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-4 leading-none">1. El Momento</h3>
                     <div className="w-16 h-1 bg-[#C5A059]"></div>
                   </div>
                   <Calendar 
@@ -244,8 +269,8 @@ const App: React.FC = () => {
 
                 {/* Columna 2: Detalles (Alineada con el calendario) */}
                 <div className="lg:col-span-6 flex flex-col">
-                  <div className="mb-10">
-                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-4">2. Detalles</h3>
+                  <div className="mb-10 h-16 md:h-24 flex flex-col justify-end">
+                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-4 leading-none">2. Detalles</h3>
                     <div className="w-16 h-1 bg-[#C5A059]"></div>
                   </div>
                   <div className={`bg-[#141414] rounded-[2rem] p-8 md:p-12 border border-white/5 transition-all duration-700 min-h-[600px] flex flex-col ${!selectedDate ? 'opacity-30 blur-sm pointer-events-none' : 'opacity-100 shadow-2xl shadow-[#C5A059]/5'}`}>

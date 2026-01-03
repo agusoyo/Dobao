@@ -4,11 +4,6 @@ import React, { useState, useEffect, useCallback } from 'react';
 const GITHUB_BASE_URL = "https://raw.githubusercontent.com/agusoyo/Dobao/main/";
 
 const IMAGES = [
-   {
-    fileName: "Escaparate Dobao.jpg", 
-    title: "Escaparate DOBAO Gourmet",
-    desc: "Nuestro escaparate es un Reflejo del Arte que llevamos dentro"
-  },
   {
     fileName: "IMG_4292.jpeg", 
     title: "La Mesa Imperial",
