@@ -22,6 +22,8 @@ export interface Reservation {
   phone: string;
   guests: number;
   purpose: string;
+  comments?: string;
+  eventCost?: number;
   status: ReservationStatus;
   services: AdditionalServices;
   createdAt: string;

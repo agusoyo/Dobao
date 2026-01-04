@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [formData, setFormData] = useState({
     name: '', email: '', phone: '', guests: 10, purpose: '',
+    comments: '',
     services: { 
       catering: false, 
       cleaning: true, 
@@ -37,7 +38,6 @@ const App: React.FC = () => {
   const [passwordInput, setPasswordInput] = useState('');
   const [loginError, setLoginError] = useState(false);
 
-  // Cargar datos desde Supabase al iniciar
   useEffect(() => {
     fetchReservations();
   }, []);
@@ -62,6 +62,8 @@ const App: React.FC = () => {
         phone: r.phone,
         guests: r.guests,
         purpose: r.purpose,
+        comments: r.comments,
+        eventCost: r.event_cost,
         status: r.status as ReservationStatus,
         services: r.services,
         createdAt: r.created_at
@@ -71,13 +73,92 @@ const App: React.FC = () => {
     setLoading(false);
   };
 
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [view]);
+  const handleUpdateStatus = async (id: string, status: ReservationStatus) => {
+    const { error } = await supabase
+      .from('reservations')
+      .update({ status })
+      .eq('id', id);
 
-  useEffect(() => {
-    setSelectedSlot(null);
-  }, [selectedDate]);
+    if (error) {
+      alert('Error al actualizar estado: ' + error.message);
+    } else {
+      setReservations(prev => prev.map(r => r.id === id ? {...r, status} : r));
+    }
+  };
+
+  const handleUpdateCost = async (id: string, cost: number) => {
+    const { error } = await supabase
+      .from('reservations')
+      .update({ event_cost: cost })
+      .eq('id', id);
+
+    if (error) {
+      alert('Error al actualizar coste: ' + error.message);
+    } else {
+      setReservations(prev => prev.map(r => r.id === id ? {...r, eventCost: cost} : r));
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('¿Seguro que desea eliminar esta reserva?')) return;
+    const { error } = await supabase.from('reservations').delete().eq('id', id);
+    if (error) {
+      alert('Error al eliminar: ' + error.message);
+    } else {
+      setReservations(prev => prev.filter(r => r.id !== id));
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDate || !selectedSlot) return;
+    setIsSubmitting(true);
+    
+    // Mapeo explícito a los nombres de columna de Supabase
+    const payload = {
+      date: format(selectedDate, 'yyyy-MM-dd'),
+      slot: selectedSlot,
+      customer_name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+      guests: formData.guests,
+      purpose: formData.purpose,
+      comments: formData.comments,
+      services: formData.services,
+      status: ReservationStatus.PENDING,
+      event_cost: 0 // Coste inicial 0, lo rellena el admin
+    };
+
+    const { data, error } = await supabase
+      .from('reservations')
+      .insert([payload])
+      .select();
+
+    if (error) {
+      alert("Error al procesar la reserva: " + error.message);
+    } else {
+      await fetchReservations();
+      
+      // 1. Confirmación nativa (Alert)
+      alert("¡Solicitud enviada correctamente! En Dobao Gourmet hemos recibido sus detalles y peticiones. Nos pondremos en contacto con usted en breve.");
+      
+      // 2. Confirmación visual (Modal)
+      setShowSuccessModal(true);
+      
+      // 3. Limpiar formulario
+      setFormData({ 
+        name: '', email: '', phone: '', guests: 10, purpose: '',
+        comments: '',
+        services: { 
+          catering: false, cleaning: true, multimedia: false, 
+          vinoteca: false, beerEstrella: false, beer1906: false
+        }
+      });
+      setSelectedDate(null);
+      setSelectedSlot(null);
+    }
+    setIsSubmitting(false);
+  };
 
   const handleAdminLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,97 +171,6 @@ const App: React.FC = () => {
       setPasswordInput('');
     }
   };
-
-  const handleLogout = () => {
-    setIsAdminAuthenticated(false);
-  };
-
-  const handleUpdateStatus = async (id: string, status: ReservationStatus) => {
-    const { error } = await supabase
-      .from('reservations')
-      .update({ status })
-      .eq('id', id);
-
-    if (error) {
-      alert('Error al actualizar: ' + error.message);
-    } else {
-      setReservations(prev => prev.map(r => r.id === id ? {...r, status} : r));
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Seguro que desea eliminar esta reserva?')) return;
-    
-    const { error } = await supabase
-      .from('reservations')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      alert('Error al eliminar: ' + error.message);
-    } else {
-      setReservations(prev => prev.filter(r => r.id !== id));
-    }
-  };
-
-  const handleServiceToggle = (service: keyof AdditionalServices) => {
-    setFormData(prev => ({
-      ...prev,
-      services: { ...prev.services, [service]: !prev.services[service] }
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedDate || !selectedSlot) return;
-    setIsSubmitting(true);
-    
-    const { data, error } = await supabase
-      .from('reservations')
-      .insert([{
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        slot: selectedSlot,
-        customer_name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        guests: formData.guests,
-        purpose: formData.purpose,
-        services: formData.services,
-        status: ReservationStatus.PENDING
-      }])
-      .select();
-
-    if (error) {
-      alert("Error al procesar la reserva: " + error.message);
-    } else {
-      await fetchReservations();
-      setShowSuccessModal(true); // Mostrar confirmación visual
-      setFormData({ 
-        name: '', email: '', phone: '', guests: 10, purpose: '',
-        services: { 
-          catering: false, cleaning: true, multimedia: false, 
-          vinoteca: false, beerEstrella: false, beer1906: false
-        }
-      });
-      setSelectedDate(null);
-      setSelectedSlot(null);
-    }
-    setIsSubmitting(false);
-  };
-
-  const ServiceCard = ({ id, label, icon, active, onClick }: { id: keyof AdditionalServices, label: string, icon: string, active: boolean, onClick: () => void }) => (
-    <div 
-      onClick={onClick}
-      className={`cursor-pointer p-4 rounded-xl border transition-all flex flex-col items-center justify-center text-center gap-2 ${
-        active 
-        ? 'bg-[#C5A059]/10 border-[#C5A059] text-[#C5A059]' 
-        : 'bg-white/5 border-white/10 text-white/40 hover:border-white/20'
-      }`}
-    >
-      <span className="text-xl md:text-2xl">{icon}</span>
-      <span className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider">{label}</span>
-    </div>
-  );
 
   return (
     <div className="min-h-screen flex flex-col bg-[#080808] text-slate-200">
@@ -203,24 +193,18 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      {/* Modal de éxito personalizado */}
       {showSuccessModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-[#141414] border border-[#C5A059]/30 p-10 md:p-16 rounded-[3rem] max-w-lg w-full text-center shadow-[0_0_100px_rgba(197,160,89,0.15)] animate-in zoom-in-95 duration-500">
-            <div className="w-20 h-20 bg-[#C5A059] rounded-full flex items-center justify-center mx-auto mb-8 shadow-[0_0_30px_rgba(197,160,89,0.4)]">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-black/90 backdrop-blur-sm">
+          <div className="bg-[#141414] border border-[#C5A059]/30 p-10 md:p-16 rounded-[3rem] max-w-lg w-full text-center shadow-2xl">
+            <div className="w-20 h-20 bg-[#C5A059] rounded-full flex items-center justify-center mx-auto mb-8">
               <svg className="w-10 h-10 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
             </div>
             <h3 className="text-3xl font-serif text-white mb-4">Solicitud Recibida</h3>
             <p className="text-slate-400 mb-10 leading-relaxed">
               Gracias por confiar en <strong>Dobao Gourmet</strong>. <br/>
-              Hemos recibido sus detalles y nos pondremos en contacto con usted en las próximas 24 horas para personalizar su experiencia.
+              Sus comentarios han sido registrados. Contactaremos con usted pronto para confirmar su evento.
             </p>
-            <button 
-              onClick={() => setShowSuccessModal(false)}
-              className="w-full bg-[#C5A059] text-black font-bold py-5 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-xs"
-            >
-              Entendido
-            </button>
+            <button onClick={() => setShowSuccessModal(false)} className="w-full bg-[#C5A059] text-black font-bold py-5 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-xs">Entendido</button>
           </div>
         </div>
       )}
@@ -229,107 +213,40 @@ const App: React.FC = () => {
         {view === 'booking' && (
           <>
             <section className="relative min-h-[90vh] w-full flex items-center justify-center overflow-hidden pt-32">
-              <img 
-                src={HERO_IMAGE_URL} 
-                alt="Bodega Gourmet" 
-                className="absolute inset-0 w-full h-full object-cover brightness-[1.2] contrast-[1.0] transition-all duration-1000" 
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-[#080808]"></div>
-              
+              <img src={HERO_IMAGE_URL} alt="Bodega" className="absolute inset-0 w-full h-full object-cover brightness-[1.1]" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-[#080808]"></div>
               <div className="relative z-10 text-center px-6 max-w-5xl">
-                <h2 className="text-4xl sm:text-6xl md:text-8xl font-serif text-white mb-6 leading-tight drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)]">
-                  Tu espacio <br className="hidden sm:block"/>
-                  <span className="text-[#C5A059] italic">exclusivo en Vigo</span>
-                </h2>
-                <div className="max-w-2xl mx-auto mb-10 p-6 rounded-3xl border border-white/30 bg-black/40 backdrop-blur-md shadow-2xl">
-                   <p className="text-white text-base md:text-xl font-bold leading-relaxed">
-                    Eventos privados, gastronomía de autor y la mejor selección de vinos en el corazón de la ciudad.
-                  </p>
-                </div>
-                <a href="#calendario" className="inline-block bg-[#C5A059] text-black px-12 py-5 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105 shadow-[0_10px_40px_rgba(197,160,89,0.6)]">
-                  Reservar Fecha
-                </a>
+                <h2 className="text-4xl sm:text-6xl md:text-8xl font-serif text-white mb-6 drop-shadow-2xl">Tu espacio <span className="text-[#C5A059] italic">exclusivo</span></h2>
+                <a href="#calendario" className="inline-block bg-[#C5A059] text-black px-12 py-5 rounded-full font-bold uppercase tracking-widest hover:bg-white transition-all transform hover:scale-105">Reservar Fecha</a>
               </div>
             </section>
 
             <section id="calendario" className="py-24 px-6 bg-[#080808] scroll-mt-20">
-              <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-10 md:gap-16 items-start">
-                {/* Columna 1: El Momento */}
-                <div className="lg:col-span-6 flex flex-col">
-                  <div className="mb-10 h-16 md:h-24 flex flex-col justify-end">
-                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-4 leading-none">1. El Momento</h3>
-                    <div className="w-16 h-1 bg-[#C5A059]"></div>
-                  </div>
-                  <Calendar 
-                    selectedDate={selectedDate} 
-                    onDateSelect={setSelectedDate} 
-                    reservations={reservations.map(r => ({ date: r.date, slot: r.slot }))} 
-                  />
+              <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-16 items-start">
+                <div className="lg:col-span-6">
+                  <div className="mb-10"><h3 className="text-3xl md:text-5xl font-serif text-white mb-4">1. El Momento</h3><div className="w-16 h-1 bg-[#C5A059]"></div></div>
+                  <Calendar selectedDate={selectedDate} onDateSelect={setSelectedDate} reservations={reservations.map(r => ({ date: r.date, slot: r.slot }))} />
                 </div>
-
-                {/* Columna 2: Detalles (Alineada con el calendario) */}
-                <div className="lg:col-span-6 flex flex-col">
-                  <div className="mb-10 h-16 md:h-24 flex flex-col justify-end">
-                    <h3 className="text-3xl md:text-5xl font-serif text-white mb-4 leading-none">2. Detalles</h3>
-                    <div className="w-16 h-1 bg-[#C5A059]"></div>
-                  </div>
-                  <div className={`bg-[#141414] rounded-[2rem] p-8 md:p-12 border border-white/5 transition-all duration-700 min-h-[600px] flex flex-col ${!selectedDate ? 'opacity-30 blur-sm pointer-events-none' : 'opacity-100 shadow-2xl shadow-[#C5A059]/5'}`}>
-                    <p className="text-[#C5A059] text-[10px] font-bold uppercase tracking-widest mb-10 border-b border-white/10 pb-6">
-                      {selectedDate ? format(selectedDate, "EEEE d 'de' MMMM", { locale: es }) : 'Seleccione una fecha primero'}
-                    </p>
-                    
-                    <form onSubmit={handleSubmit} className="space-y-8 flex-1">
-                      {/* Turno */}
-                      <div className="space-y-4">
-                        <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Seleccionar Turno</label>
-                        <div className="grid grid-cols-2 gap-4">
-                          {[ReservationSlot.MIDDAY, ReservationSlot.NIGHT].map(slot => {
-                            const dateStr = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : '';
-                            const isOccupied = reservations.some(r => r.date === dateStr && r.slot === slot && r.status !== ReservationStatus.CANCELLED);
-                            return (
-                              <button
-                                key={slot}
-                                type="button"
-                                disabled={isOccupied}
-                                onClick={() => setSelectedSlot(slot)}
-                                className={`px-4 py-5 rounded-2xl border text-center transition-all ${
-                                  selectedSlot === slot 
-                                    ? 'bg-[#C5A059] border-[#C5A059] text-black font-bold' 
-                                    : isOccupied
-                                    ? 'bg-red-950/10 border-red-900/20 text-red-800 cursor-not-allowed opacity-40'
-                                    : 'bg-transparent border-white/10 text-white hover:border-[#C5A059]/50'
-                                }`}
-                              >
-                                {slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena'}
-                              </button>
-                            );
-                          })}
-                        </div>
+                <div className="lg:col-span-6">
+                  <div className="mb-10"><h3 className="text-3xl md:text-5xl font-serif text-white mb-4">2. Detalles</h3><div className="w-16 h-1 bg-[#C5A059]"></div></div>
+                  <div className={`bg-[#141414] rounded-[2rem] p-8 md:p-12 border border-white/5 transition-all ${!selectedDate ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+                    <form onSubmit={handleSubmit} className="space-y-8">
+                      <div className="grid grid-cols-2 gap-4">
+                        {[ReservationSlot.MIDDAY, ReservationSlot.NIGHT].map(slot => (
+                          <button key={slot} type="button" onClick={() => setSelectedSlot(slot)} className={`px-4 py-5 rounded-2xl border text-center transition-all ${selectedSlot === slot ? 'bg-[#C5A059] text-black font-bold border-[#C5A059]' : 'border-white/10 text-white hover:border-[#C5A059]'}`}>
+                            {slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena'}
+                          </button>
+                        ))}
                       </div>
-
-                      {/* Datos Cliente */}
-                      <div className={`space-y-6 ${!selectedSlot ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
+                      <div className={`space-y-6 ${!selectedSlot ? 'opacity-20 pointer-events-none' : ''}`}>
                         <div className="grid sm:grid-cols-2 gap-4">
-                          <input type="text" required placeholder="Su Nombre" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]/50 transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                          <input type="tel" required placeholder="Teléfono" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]/50 transition-all" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                          <input type="text" required placeholder="Nombre" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                          <input type="tel" required placeholder="Teléfono" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                         </div>
-                        <input type="email" required placeholder="Email de contacto" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]/50 transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-                        
-                        {/* Servicios Extra */}
-                        <div className="pt-4">
-                          <label className="text-[10px] font-bold uppercase tracking-widest text-slate-500 block mb-6">Experiencias y Extras</label>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                            <ServiceCard id="cleaning" label="Limpieza" icon="🧹" active={formData.services.cleaning} onClick={() => handleServiceToggle('cleaning')} />
-                            <ServiceCard id="vinoteca" label="Vinoteca" icon="🍷" active={formData.services.vinoteca} onClick={() => handleServiceToggle('vinoteca')} />
-                            <ServiceCard id="catering" label="Catering" icon="👨‍🍳" active={formData.services.catering} onClick={() => handleServiceToggle('catering')} />
-                            <ServiceCard id="multimedia" label="Multimedia" icon="📺" active={formData.services.multimedia} onClick={() => handleServiceToggle('multimedia')} />
-                            <ServiceCard id="beerEstrella" label="Estrella" icon="🍺" active={formData.services.beerEstrella} onClick={() => handleServiceToggle('beerEstrella')} />
-                            <ServiceCard id="beer1906" label="1906" icon="🍻" active={formData.services.beer1906} onClick={() => handleServiceToggle('beer1906')} />
-                          </div>
-                        </div>
-
-                        <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-6 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-sm shadow-[0_15px_40px_rgba(197,160,89,0.2)]">
-                          {isSubmitting ? 'Enviando solicitud...' : 'Confirmar Disponibilidad'}
+                        <input type="email" required placeholder="Email" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                        <textarea placeholder="Peticiones especiales, intolerancias, detalles..." className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white min-h-[120px] resize-none outline-none focus:border-[#C5A059]/50" value={formData.comments} onChange={e => setFormData({...formData, comments: e.target.value})} />
+                        <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-6 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-sm">
+                          {isSubmitting ? 'Procesando...' : 'Confirmar Disponibilidad'}
                         </button>
                       </div>
                     </form>
@@ -346,30 +263,23 @@ const App: React.FC = () => {
           <div className="pt-32 min-h-screen bg-slate-50 text-slate-900">
             {!isAdminAuthenticated ? (
               <div className="flex items-center justify-center py-24 px-6">
-                <form onSubmit={handleAdminLogin} className="max-w-md w-full bg-white rounded-[2.5rem] p-10 shadow-xl border border-slate-100 text-center">
-                  <h3 className="text-2xl font-serif mb-3">Panel de Gestión</h3>
-                  <input 
-                    type="password" 
-                    value={passwordInput}
-                    onChange={(e) => setPasswordInput(e.target.value)}
-                    placeholder="Contraseña" 
-                    className="w-full bg-slate-50 border-2 rounded-2xl px-6 py-4 text-center mb-6 outline-none"
-                  />
-                  {loginError && <p className="text-red-500 text-xs mb-4">Contraseña incorrecta</p>}
-                  <button type="submit" className="w-full bg-black text-white font-bold py-5 rounded-2xl hover:bg-[#C5A059] hover:text-black transition-all uppercase text-xs tracking-widest">
-                    Acceder
-                  </button>
+                <form onSubmit={handleAdminLogin} className="max-w-md w-full bg-white rounded-[2.5rem] p-10 shadow-xl border text-center">
+                  <h3 className="text-2xl font-serif mb-6">Acceso Administración</h3>
+                  <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="Contraseña" className="w-full bg-slate-50 border rounded-2xl px-6 py-4 text-center mb-6" />
+                  {loginError && <p className="text-red-500 text-xs mb-4">Error de acceso</p>}
+                  <button type="submit" className="w-full bg-black text-white font-bold py-5 rounded-2xl hover:bg-[#C5A059] uppercase text-xs tracking-widest">Entrar</button>
                 </form>
               </div>
             ) : (
               <AdminDashboard 
                 reservations={reservations} 
                 onUpdateStatus={handleUpdateStatus}
+                onUpdateCost={handleUpdateCost}
                 onUpdate={() => {}}
                 onDelete={handleDelete}
                 onImport={() => {}}
                 onBackToBooking={() => setView('booking')}
-                onLogout={handleLogout}
+                onLogout={() => setIsAdminAuthenticated(false)}
               />
             )}
           </div>
