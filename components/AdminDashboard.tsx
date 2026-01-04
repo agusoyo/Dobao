@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Reservation, ReservationStatus, ReservationSlot } from '../types';
 import { format, getYear, getMonth } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -33,6 +33,52 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [reservations, filterMonth, filterYear]);
 
+  const handleExportExcel = () => {
+    const dataToExport = filteredReservations.map(res => ({
+      Fecha: format(new Date(res.date), 'dd/MM/yyyy'),
+      Turno: res.slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena',
+      Cliente: res.customerName,
+      Teléfono: res.phone,
+      Email: res.email,
+      Invitados: res.guests,
+      Peticiones: res.comments || '',
+      'Coste (€)': res.eventCost || 0,
+      Estado: res.status
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Reservas");
+    XLSX.writeFile(workbook, `Dobao_Gourmet_Reservas_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+  };
+
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text("Dobao Gourmet - Listado de Reservas", 14, 20);
+    doc.setFontSize(10);
+    doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
+
+    const tableRows = filteredReservations.map(res => [
+      format(new Date(res.date), 'dd/MM/yyyy'),
+      res.slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena',
+      res.customerName,
+      res.phone,
+      `${res.eventCost || 0} €`,
+      res.status
+    ]);
+
+    autoTable(doc, {
+      startY: 40,
+      head: [['Fecha', 'Turno', 'Cliente', 'Teléfono', 'Coste', 'Estado']],
+      body: tableRows,
+      theme: 'grid',
+      headStyles: { fillColor: [197, 160, 89] }
+    });
+
+    doc.save(`Dobao_Gourmet_Reservas_${format(new Date(), 'yyyyMMdd')}.pdf`);
+  };
+
   return (
     <div className="pt-2 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-6">
@@ -44,15 +90,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <h2 className="text-2xl md:text-4xl font-serif text-slate-900">Registro de Eventos</h2>
         </div>
         
-        <div className="flex gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-          <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="bg-slate-50 border-none text-xs font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
-            <option value="all">Años</option>
-            {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
-          <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="bg-slate-50 border-none text-xs font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
-            <option value="all">Meses</option>
-            {[...Array(12)].map((_, i) => <option key={i} value={i}>{format(new Date(2000, i, 1), 'MMMM', { locale: es })}</option>)}
-          </select>
+        <div className="flex flex-wrap gap-4 items-center">
+          {/* Botones de Exportación */}
+          <div className="flex gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+            <button 
+              onClick={handleExportExcel}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+              Excel
+            </button>
+            <button 
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-rose-100 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+              PDF
+            </button>
+          </div>
+
+          <div className="flex gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+            <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="bg-slate-50 border-none text-xs font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
+              <option value="all">Años</option>
+              {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="bg-slate-50 border-none text-xs font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
+              <option value="all">Meses</option>
+              {[...Array(12)].map((_, i) => <option key={i} value={i}>{format(new Date(2000, i, 1), 'MMMM', { locale: es })}</option>)}
+            </select>
+          </div>
         </div>
       </div>
 
