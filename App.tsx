@@ -109,12 +109,21 @@ const App: React.FC = () => {
     }
   };
 
+  const toggleService = (service: keyof AdditionalServices) => {
+    setFormData(prev => ({
+      ...prev,
+      services: {
+        ...prev.services,
+        [service]: !prev.services[service]
+      }
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedDate || !selectedSlot) return;
     setIsSubmitting(true);
     
-    // Mapeo explícito a los nombres de columna de Supabase
     const payload = {
       date: format(selectedDate, 'yyyy-MM-dd'),
       slot: selectedSlot,
@@ -126,7 +135,7 @@ const App: React.FC = () => {
       comments: formData.comments,
       services: formData.services,
       status: ReservationStatus.PENDING,
-      event_cost: 0 // Coste inicial 0, lo rellena el admin
+      event_cost: 0
     };
 
     const { data, error } = await supabase
@@ -138,14 +147,8 @@ const App: React.FC = () => {
       alert("Error al procesar la reserva: " + error.message);
     } else {
       await fetchReservations();
-      
-      // 1. Confirmación nativa (Alert)
       alert("¡Solicitud enviada correctamente! En Dobao Gourmet hemos recibido sus detalles y peticiones. Nos pondremos en contacto con usted en breve.");
-      
-      // 2. Confirmación visual (Modal)
       setShowSuccessModal(true);
-      
-      // 3. Limpiar formulario
       setFormData({ 
         name: '', email: '', phone: '', guests: 10, purpose: '',
         comments: '',
@@ -202,7 +205,7 @@ const App: React.FC = () => {
             <h3 className="text-3xl font-serif text-white mb-4">Solicitud Recibida</h3>
             <p className="text-slate-400 mb-10 leading-relaxed">
               Gracias por confiar en <strong>Dobao Gourmet</strong>. <br/>
-              Sus comentarios han sido registrados. Contactaremos con usted pronto para confirmar su evento.
+              Sus detalles han sido registrados. Contactaremos con usted pronto para confirmar su evento.
             </p>
             <button onClick={() => setShowSuccessModal(false)} className="w-full bg-[#C5A059] text-black font-bold py-5 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-xs">Entendido</button>
           </div>
@@ -223,14 +226,15 @@ const App: React.FC = () => {
 
             <section id="calendario" className="py-24 px-6 bg-[#080808] scroll-mt-20">
               <div className="max-w-7xl mx-auto grid lg:grid-cols-12 gap-16 items-start">
-                <div className="lg:col-span-6">
+                <div className="lg:col-span-5">
                   <div className="mb-10"><h3 className="text-3xl md:text-5xl font-serif text-white mb-4">1. El Momento</h3><div className="w-16 h-1 bg-[#C5A059]"></div></div>
                   <Calendar selectedDate={selectedDate} onDateSelect={setSelectedDate} reservations={reservations.map(r => ({ date: r.date, slot: r.slot }))} />
                 </div>
-                <div className="lg:col-span-6">
-                  <div className="mb-10"><h3 className="text-3xl md:text-5xl font-serif text-white mb-4">2. Detalles</h3><div className="w-16 h-1 bg-[#C5A059]"></div></div>
+                <div className="lg:col-span-7">
+                  <div className="mb-10"><h3 className="text-3xl md:text-5xl font-serif text-white mb-4">2. Detalles del Evento</h3><div className="w-16 h-1 bg-[#C5A059]"></div></div>
                   <div className={`bg-[#141414] rounded-[2rem] p-8 md:p-12 border border-white/5 transition-all ${!selectedDate ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-                    <form onSubmit={handleSubmit} className="space-y-8">
+                    <form onSubmit={handleSubmit} className="space-y-10">
+                      {/* Turno */}
                       <div className="grid grid-cols-2 gap-4">
                         {[ReservationSlot.MIDDAY, ReservationSlot.NIGHT].map(slot => (
                           <button key={slot} type="button" onClick={() => setSelectedSlot(slot)} className={`px-4 py-5 rounded-2xl border text-center transition-all ${selectedSlot === slot ? 'bg-[#C5A059] text-black font-bold border-[#C5A059]' : 'border-white/10 text-white hover:border-[#C5A059]'}`}>
@@ -238,15 +242,51 @@ const App: React.FC = () => {
                           </button>
                         ))}
                       </div>
-                      <div className={`space-y-6 ${!selectedSlot ? 'opacity-20 pointer-events-none' : ''}`}>
+
+                      <div className={`space-y-8 ${!selectedSlot ? 'opacity-20 pointer-events-none' : ''}`}>
+                        {/* Datos de contacto */}
                         <div className="grid sm:grid-cols-2 gap-4">
-                          <input type="text" required placeholder="Nombre" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
-                          <input type="tel" required placeholder="Teléfono" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
+                          <input type="text" required placeholder="Nombre completo" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                          <input type="tel" required placeholder="Teléfono de contacto" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                         </div>
-                        <input type="email" required placeholder="Email" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-                        <textarea placeholder="Peticiones especiales, intolerancias, detalles..." className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white min-h-[120px] resize-none outline-none focus:border-[#C5A059]/50" value={formData.comments} onChange={e => setFormData({...formData, comments: e.target.value})} />
-                        <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-6 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-sm">
-                          {isSubmitting ? 'Procesando...' : 'Confirmar Disponibilidad'}
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <input type="email" required placeholder="Email" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                          <div className="flex items-center bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4">
+                            <span className="text-slate-500 text-sm mr-4 uppercase font-bold">Invitados:</span>
+                            <input type="number" min="1" max="35" className="bg-transparent w-full text-white outline-none" value={formData.guests} onChange={e => setFormData({...formData, guests: parseInt(e.target.value)})} />
+                          </div>
+                        </div>
+
+                        {/* Servicios Adicionales */}
+                        <div className="space-y-4">
+                          <h4 className="text-[#C5A059] font-serif text-lg">Servicios Premium</h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {(Object.keys(formData.services) as Array<keyof AdditionalServices>).map((service) => (
+                              <button
+                                key={service}
+                                type="button"
+                                onClick={() => toggleService(service)}
+                                className={`px-4 py-3 rounded-xl border text-[10px] font-bold uppercase tracking-wider transition-all ${
+                                  formData.services[service] 
+                                    ? 'bg-[#C5A059] text-black border-[#C5A059]' 
+                                    : 'border-white/5 text-slate-400 hover:border-white/20'
+                                }`}
+                              >
+                                {service === 'catering' && 'Catering'}
+                                {service === 'cleaning' && 'Limpieza'}
+                                {service === 'multimedia' && 'Multimedia'}
+                                {service === 'vinoteca' && 'Vinoteca'}
+                                {service === 'beerEstrella' && 'Estrella Galicia'}
+                                {service === 'beer1906' && '1906 Reserva'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <textarea placeholder="Peticiones especiales, intolerancias, detalles del evento..." className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white min-h-[120px] resize-none outline-none focus:border-[#C5A059]" value={formData.comments} onChange={e => setFormData({...formData, comments: e.target.value})} />
+                        
+                        <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-6 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-sm shadow-[0_10px_30px_rgba(197,160,89,0.2)]">
+                          {isSubmitting ? 'Procesando Solicitud...' : 'Solicitar Reserva'}
                         </button>
                       </div>
                     </form>

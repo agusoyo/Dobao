@@ -33,22 +33,31 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [reservations, filterMonth, filterYear]);
 
-  // Nueva función de Backup Completo (Snapshot)
+  const getActiveServicesText = (services: any) => {
+    const names: Record<string, string> = {
+      catering: 'Catering',
+      cleaning: 'Limpieza',
+      multimedia: 'Multimedia',
+      vinoteca: 'Vinoteca',
+      beerEstrella: 'Estrella',
+      beer1906: '1906'
+    };
+    return Object.entries(services)
+      .filter(([_, active]) => active)
+      .map(([key]) => names[key] || key)
+      .join(', ');
+  };
+
   const handleSystemSnapshot = () => {
     const snapshot = {
       backupDate: new Date().toISOString(),
-      version: "1.2.0",
-      data: reservations,
-      config: {
-        tableName: "reservations",
-        fields: ["id", "date", "slot", "customer_name", "email", "phone", "guests", "purpose", "comments", "event_cost", "status", "services", "created_at"]
-      }
+      version: "1.2.1",
+      data: reservations
     };
-    
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(snapshot, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `Dobao_System_Snapshot_${format(new Date(), 'yyyyMMdd_HHmm')}.json`);
+    downloadAnchorNode.setAttribute("download", `Dobao_Snapshot_${format(new Date(), 'yyyyMMdd')}.json`);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
@@ -60,8 +69,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       Turno: res.slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena',
       Cliente: res.customerName,
       Teléfono: res.phone,
-      Email: res.email,
       Invitados: res.guests,
+      Servicios: getActiveServicesText(res.services),
       Peticiones: res.comments || '',
       'Coste (€)': res.eventCost || 0,
       Estado: res.status
@@ -70,34 +79,33 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Reservas");
-    XLSX.writeFile(workbook, `Dobao_Gourmet_Reservas_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+    XLSX.writeFile(workbook, `Dobao_Reservas_${format(new Date(), 'yyyyMMdd')}.xlsx`);
   };
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    doc.setFontSize(20);
-    doc.text("Dobao Gourmet - Listado de Reservas", 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Generado el: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, 30);
-
+    doc.setFontSize(18);
+    doc.text("Dobao Gourmet - Reservas", 14, 20);
+    
     const tableRows = filteredReservations.map(res => [
       format(new Date(res.date), 'dd/MM/yyyy'),
       res.slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena',
       res.customerName,
-      res.phone,
+      getActiveServicesText(res.services),
       `${res.eventCost || 0} €`,
       res.status
     ]);
 
     autoTable(doc, {
-      startY: 40,
-      head: [['Fecha', 'Turno', 'Cliente', 'Teléfono', 'Coste', 'Estado']],
+      startY: 30,
+      head: [['Fecha', 'Turno', 'Cliente', 'Servicios', 'Coste', 'Estado']],
       body: tableRows,
       theme: 'grid',
-      headStyles: { fillColor: [197, 160, 89] }
+      headStyles: { fillColor: [197, 160, 89] },
+      styles: { fontSize: 8 }
     });
 
-    doc.save(`Dobao_Gourmet_Reservas_${format(new Date(), 'yyyyMMdd')}.pdf`);
+    doc.save(`Dobao_Reservas_${format(new Date(), 'yyyyMMdd')}.pdf`);
   };
 
   return (
@@ -112,28 +120,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
         
         <div className="flex flex-wrap gap-4 items-center">
-          {/* Herramientas de Backup y Exportación */}
           <div className="flex gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-            <button 
-              onClick={handleSystemSnapshot}
-              title="Guardar punto de restauración del sistema (JSON)"
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-              Snapshot
-            </button>
-            <button 
-              onClick={handleExportExcel}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors"
-            >
-              Excel
-            </button>
-            <button 
-              onClick={handleExportPDF}
-              className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-rose-100 transition-colors"
-            >
-              PDF
-            </button>
+            <button onClick={handleSystemSnapshot} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">Snapshot</button>
+            <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors">Excel</button>
+            <button onClick={handleExportPDF} className="px-4 py-2 bg-rose-50 text-rose-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-rose-100 transition-colors">PDF</button>
           </div>
 
           <div className="flex gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
@@ -156,7 +146,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <tr>
                 <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Fecha / Turno</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Cliente</th>
-                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Detalles y Peticiones</th>
+                <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Servicios y Peticiones</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Coste (€)</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Estado</th>
                 <th className="px-8 py-5 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Acciones</th>
@@ -174,10 +164,18 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <div className="text-xs text-slate-500">{res.phone}</div>
                   </td>
                   <td className="px-8 py-6">
-                    <div className="max-w-[250px]">
-                       <p className="text-[11px] text-slate-600 line-clamp-3 italic" title={res.comments}>
-                        {res.comments ? `"${res.comments}"` : <span className="text-slate-300">Sin peticiones</span>}
+                    <div className="max-w-[300px] space-y-2">
+                       <p className="text-[11px] text-slate-600 line-clamp-2 italic" title={res.comments}>
+                        {res.comments ? `"${res.comments}"` : <span className="text-slate-300">Sin comentarios adicionales</span>}
                        </p>
+                       <div className="flex flex-wrap gap-1">
+                          {res.services.cleaning && <span className="px-1.5 py-0.5 bg-slate-100 text-[8px] font-bold text-slate-500 rounded uppercase border border-slate-200">Limpieza</span>}
+                          {res.services.catering && <span className="px-1.5 py-0.5 bg-amber-50 text-[8px] font-bold text-amber-600 rounded uppercase border border-amber-100">Catering</span>}
+                          {res.services.vinoteca && <span className="px-1.5 py-0.5 bg-purple-50 text-[8px] font-bold text-purple-600 rounded uppercase border border-purple-100">Vinoteca</span>}
+                          {res.services.multimedia && <span className="px-1.5 py-0.5 bg-blue-50 text-[8px] font-bold text-blue-600 rounded uppercase border border-blue-100">Multimedia</span>}
+                          {res.services.beerEstrella && <span className="px-1.5 py-0.5 bg-red-50 text-[8px] font-bold text-red-600 rounded uppercase border border-red-100">Estrella</span>}
+                          {res.services.beer1906 && <span className="px-1.5 py-0.5 bg-stone-100 text-[8px] font-bold text-stone-600 rounded uppercase border border-stone-200">1906</span>}
+                       </div>
                     </div>
                   </td>
                   <td className="px-8 py-6">
@@ -186,8 +184,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         type="number" 
                         value={res.eventCost || 0}
                         onChange={(e) => onUpdateCost(res.id, parseFloat(e.target.value) || 0)}
-                        className="w-24 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-indigo-700 outline-none focus:border-indigo-500"
-                        placeholder="0.00"
+                        className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs font-bold text-indigo-700 outline-none focus:border-indigo-500"
                       />
                       <span className="text-slate-400 font-bold text-xs">€</span>
                     </div>
@@ -216,7 +213,6 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               ))}
             </tbody>
           </table>
-          {filteredReservations.length === 0 && <div className="p-20 text-center text-slate-400 italic">No hay registros para este periodo.</div>}
         </div>
       </div>
     </div>
