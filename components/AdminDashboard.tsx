@@ -33,6 +33,27 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
   }, [reservations, filterMonth, filterYear]);
 
+  // Nueva función de Backup Completo (Snapshot)
+  const handleSystemSnapshot = () => {
+    const snapshot = {
+      backupDate: new Date().toISOString(),
+      version: "1.2.0",
+      data: reservations,
+      config: {
+        tableName: "reservations",
+        fields: ["id", "date", "slot", "customer_name", "email", "phone", "guests", "purpose", "comments", "event_cost", "status", "services", "created_at"]
+      }
+    };
+    
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(snapshot, null, 2));
+    const downloadAnchorNode = document.createElement('a');
+    downloadAnchorNode.setAttribute("href", dataStr);
+    downloadAnchorNode.setAttribute("download", `Dobao_System_Snapshot_${format(new Date(), 'yyyyMMdd_HHmm')}.json`);
+    document.body.appendChild(downloadAnchorNode);
+    downloadAnchorNode.click();
+    downloadAnchorNode.remove();
+  };
+
   const handleExportExcel = () => {
     const dataToExport = filteredReservations.map(res => ({
       Fecha: format(new Date(res.date), 'dd/MM/yyyy'),
@@ -91,20 +112,26 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
         
         <div className="flex flex-wrap gap-4 items-center">
-          {/* Botones de Exportación */}
+          {/* Herramientas de Backup y Exportación */}
           <div className="flex gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
+            <button 
+              onClick={handleSystemSnapshot}
+              title="Guardar punto de restauración del sistema (JSON)"
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+              Snapshot
+            </button>
             <button 
               onClick={handleExportExcel}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
               Excel
             </button>
             <button 
               onClick={handleExportPDF}
               className="flex items-center gap-2 px-4 py-2 bg-rose-50 text-rose-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-rose-100 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
               PDF
             </button>
           </div>
