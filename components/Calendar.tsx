@@ -17,20 +17,18 @@ interface CalendarProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
   reservations: { date: string, slot: ReservationSlot }[];
+  tastingDates?: string[]; // Nueva propiedad para identificar días de cata
 }
 
-const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reservations }) => {
+const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reservations, tastingDates = [] }) => {
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
 
-  // Fix: Manual implementation of startOfToday to avoid missing export error on line 15
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // Fix: Manual implementation of startOfMonth to avoid missing export error on line 5
   const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
   const monthEnd = endOfMonth(monthStart);
 
-  // Fix: Manual implementation of startOfWeek (Monday start) to avoid missing export error on line 7
   const getStartOfWeek = (date: Date) => {
     const d = new Date(date);
     const day = d.getDay();
@@ -64,7 +62,6 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserva
         </h3>
         <div className="flex gap-3">
           <button 
-            // Fix: Use addMonths with -1 instead of subMonths to avoid missing export error on line 13
             onClick={() => setCurrentMonth(addMonths(currentMonth, -1))}
             className="w-12 h-12 border border-white/10 rounded-full flex items-center justify-center hover:bg-white/5 transition-all"
           >
@@ -89,10 +86,12 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserva
 
       <div className="grid grid-cols-7 gap-3">
         {calendarDays.map((day, idx) => {
+          const dateStr = format(day, 'yyyy-MM-dd');
           const status = getDayStatus(day);
           const past = isPast(day);
           const selected = selectedDate && isSameDay(day, selectedDate);
           const sameMonth = isSameMonth(day, monthStart);
+          const hasTasting = tastingDates.includes(dateStr);
 
           return (
             <button
@@ -110,8 +109,15 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserva
               `}
             >
               <span className="text-lg font-serif">{format(day, 'd')}</span>
+              
+              {/* Prioridad visual: Si hay cata, lo mostramos primero */}
+              {hasTasting && !selected ? (
+                <span className="absolute top-2 right-2 text-[7px] font-black bg-[#C5A059] text-black px-1.5 py-0.5 rounded-sm tracking-widest shadow-lg">CATA</span>
+              ) : null}
+
               {status === 'FULL' && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter">Completo</span>}
-              {status === 'PARTIAL' && !selected && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter text-[#C5A059]">1 Turno Libre</span>}
+              {status === 'PARTIAL' && !selected && !hasTasting && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter text-[#C5A059]">1 Turno Libre</span>}
+              {hasTasting && selected && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter text-black/60">Evento de Cata</span>}
             </button>
           );
         })}
@@ -121,6 +127,10 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserva
         <div className="flex items-center gap-3">
           <div className="w-3 h-3 rounded-full bg-[#C5A059]"></div>
           <span>Seleccionado</span>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="w-4 h-4 rounded-sm bg-[#C5A059] flex items-center justify-center text-[6px] text-black font-black">CATA</div>
+          <span>Evento especial</span>
         </div>
         <div className="flex items-center gap-3">
           <div className="w-3 h-3 rounded-full border border-[#C5A059]/30 bg-[#C5A059]/5"></div>

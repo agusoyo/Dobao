@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Reservation, ReservationStatus, ReservationSlot } from '../types';
-import { format, getYear, getMonth } from 'date-fns';
+import { format, getYear, getMonth, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -15,22 +15,35 @@ interface AdminDashboardProps {
   onDelete: (id: string) => void;
   onImport: (newReservations: Reservation[]) => void;
   onBackToBooking: () => void;
+  onGoToWineConfig?: () => void;
   onLogout?: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
-  reservations, onUpdateStatus, onUpdateCost, onDelete, onBackToBooking, onLogout 
+  reservations, onUpdateStatus, onUpdateCost, onDelete, onBackToBooking, onGoToWineConfig, onLogout 
 }) => {
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
 
+  const safeFormat = (date: string | Date | undefined, formatStr: string) => {
+    if (!date) return 'N/A';
+    const d = new Date(date);
+    return isValid(d) ? format(d, formatStr, { locale: es }) : 'N/A';
+  };
+
   const filteredReservations = useMemo(() => {
     return reservations.filter(res => {
       const resDate = new Date(res.date);
+      if (!isValid(resDate)) return false;
+      
       const matchYear = filterYear === 'all' || getYear(resDate).toString() === filterYear;
       const matchMonth = filterMonth === 'all' || getMonth(resDate).toString() === filterMonth;
       return matchYear && matchMonth;
-    }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    }).sort((a, b) => {
+      const da = new Date(a.date).getTime();
+      const db = new Date(b.date).getTime();
+      return da - db;
+    });
   }, [reservations, filterMonth, filterYear]);
 
   const getActiveServicesText = (services: any) => {
@@ -42,7 +55,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       beerEstrella: 'Estrella',
       beer1906: '1906'
     };
-    return Object.entries(services)
+    return Object.entries(services || {})
       .filter(([_, active]) => active)
       .map(([key]) => names[key] || key)
       .join(', ');
@@ -51,13 +64,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSystemSnapshot = () => {
     const snapshot = {
       backupDate: new Date().toISOString(),
-      version: "1.2.1",
+      version: "1.3.0",
       data: reservations
     };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(snapshot, null, 2));
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
-    downloadAnchorNode.setAttribute("download", `Dobao_Snapshot_${format(new Date(), 'yyyyMMdd')}.json`);
+    downloadAnchorNode.setAttribute("download", `Dobao_Full_Backup_${format(new Date(), 'yyyyMMdd')}.json`);
     document.body.appendChild(downloadAnchorNode);
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
@@ -65,7 +78,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const handleExportExcel = () => {
     const dataToExport = filteredReservations.map(res => ({
-      Fecha: format(new Date(res.date), 'dd/MM/yyyy'),
+      Fecha: safeFormat(res.date, 'dd/MM/yyyy'),
       Turno: res.slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena',
       Cliente: res.customerName,
       Teléfono: res.phone,
@@ -79,16 +92,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Reservas");
-    XLSX.writeFile(workbook, `Dobao_Reservas_${format(new Date(), 'yyyyMMdd')}.xlsx`);
+    XLSX.writeFile(workbook, `Dobao_Eventos_${format(new Date(), 'yyyyMMdd')}.xlsx`);
   };
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text("Dobao Gourmet - Reservas", 14, 20);
+    doc.text("Dobao Gourmet - Registro de Eventos", 14, 20);
     
     const tableRows = filteredReservations.map(res => [
-      format(new Date(res.date), 'dd/MM/yyyy'),
+      safeFormat(res.date, 'dd/MM/yyyy'),
       res.slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena',
       res.customerName,
       getActiveServicesText(res.services),
@@ -105,7 +118,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       styles: { fontSize: 8 }
     });
 
-    doc.save(`Dobao_Reservas_${format(new Date(), 'yyyyMMdd')}.pdf`);
+    doc.save(`Dobao_Eventos_${format(new Date(), 'yyyyMMdd')}.pdf`);
   };
 
   return (
@@ -114,6 +127,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         <div>
           <div className="flex gap-4 mb-4">
             <button onClick={onBackToBooking} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest">← Volver a Web</button>
+            <button onClick={onGoToWineConfig} className="text-[#C5A059] font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/></svg>
+              Configurar Catas
+            </button>
             {onLogout && <button onClick={onLogout} className="text-red-500 font-bold text-[10px] uppercase tracking-widest">Cerrar Sesión</button>}
           </div>
           <h2 className="text-2xl md:text-4xl font-serif text-slate-900">Registro de Eventos</h2>
@@ -121,7 +138,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         
         <div className="flex flex-wrap gap-4 items-center">
           <div className="flex gap-2 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm">
-            <button onClick={handleSystemSnapshot} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors">Snapshot</button>
+            <button onClick={handleSystemSnapshot} className="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-indigo-100 transition-colors" title="Copia de seguridad completa">Snapshot</button>
             <button onClick={handleExportExcel} className="px-4 py-2 bg-emerald-50 text-emerald-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-emerald-100 transition-colors">Excel</button>
             <button onClick={handleExportPDF} className="px-4 py-2 bg-rose-50 text-rose-700 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-rose-100 transition-colors">PDF</button>
           </div>
@@ -156,7 +173,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {filteredReservations.map((res) => (
                 <tr key={res.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-8 py-6">
-                    <div className="font-bold text-slate-900">{format(new Date(res.date), 'dd MMM yy', { locale: es })}</div>
+                    <div className="font-bold text-slate-900">{safeFormat(res.date, 'dd MMM yy')}</div>
                     <div className="text-[10px] font-bold text-[#C5A059] uppercase tracking-wider">{res.slot === ReservationSlot.MIDDAY ? 'COMIDA' : 'CENA'}</div>
                   </td>
                   <td className="px-8 py-6">

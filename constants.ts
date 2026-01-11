@@ -4,6 +4,7 @@ import { Reservation, ReservationStatus, TxokoConfig, ReservationSlot } from './
 export const TXOKO_CONFIG: TxokoConfig = {
   name: "Dobao Gourmet",
   address: "Álvaro Cunqueiro - Vigo",
+  phone: "689 20 47 86",
   maxCapacity: 35,
   pricePerDay: 180
 };

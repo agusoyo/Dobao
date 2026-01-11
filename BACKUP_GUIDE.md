@@ -4,14 +4,11 @@
 Este documento detalla cómo restaurar el sistema a un punto anterior.
 
 ## 1. Puntos de Restauración del Código
-Para restaurar el código, copia el contenido de los archivos listados en el historial de este chat. 
-Última versión estable: **v1.2.0 - Exportación Excel/PDF y Costes Añadidos**.
+Última versión estable: **v1.5.0 - Gestión de Depósitos y Edición de Asistentes**.
 
 ## 2. Restauración de Base de Datos (Supabase)
-Si pierdes el acceso a la base de datos o borras tablas por error, sigue estos pasos:
 
-### Crear la estructura de nuevo:
-Ejecuta este SQL en el editor de Supabase:
+### Tabla de Reservas (Privadas):
 ```sql
 CREATE TABLE reservations (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
@@ -30,10 +27,33 @@ CREATE TABLE reservations (
 );
 ```
 
-### Importar Datos:
-Desde el panel de Supabase, usa la opción **"Import data from CSV"** en la tabla `reservations` para cargar tu último backup manual.
+### Tabla de Catas de Vinos (Eventos):
+```sql
+CREATE TABLE wine_tastings (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  date DATE NOT NULL,
+  slot TEXT NOT NULL DEFAULT 'NIGHT',
+  name TEXT NOT NULL,
+  max_capacity INTEGER NOT NULL,
+  price_per_person NUMERIC NOT NULL,
+  description TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+```
+
+### Tabla de Asistentes a Catas:
+```sql
+CREATE TABLE tasting_attendees (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  tasting_id UUID REFERENCES wine_tastings(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL,
+  phone TEXT NOT NULL,
+  seats INTEGER NOT NULL DEFAULT 1,
+  deposit NUMERIC DEFAULT 0, -- Columna para depósitos manuales
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+```
 
 ## 3. Credenciales Críticas
-- **Supabase URL:** `https://otaqbnxfiufpffpcltvf.supabase.co`
-- **Supabase Key:** (Ver archivo `services/supabaseClient.ts`)
 - **Admin Password:** `admin2025`

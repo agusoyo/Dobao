@@ -29,6 +29,29 @@ export interface Reservation {
   createdAt: string;
 }
 
+export interface WineTasting {
+  id: string;
+  date: string;
+  slot: ReservationSlot; 
+  name: string;
+  maxCapacity: number;
+  pricePerPerson: number;
+  description: string;
+  createdAt?: string;
+  currentAttendees?: number; 
+}
+
+export interface TastingAttendee {
+  id: string;
+  tastingId: string;
+  name: string;
+  email: string;
+  phone: string;
+  seats: number;
+  createdAt: string;
+  deposit?: number; // Nuevo: Dinero entregado manualmente
+}
+
 export enum ReservationStatus {
   PENDING = 'PENDING',
   CONFIRMED = 'CONFIRMED',
@@ -38,6 +61,7 @@ export enum ReservationStatus {
 export interface TxokoConfig {
   name: string;
   address: string;
+  phone: string;
   maxCapacity: number;
   pricePerDay: number;
 }
