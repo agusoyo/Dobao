@@ -5,6 +5,11 @@ const GITHUB_BASE_URL = "https://raw.githubusercontent.com/agusoyo/Dobao/main/";
 
 const IMAGES = [
   {
+    fileName: "Escaparate Dobao.jpg", 
+    title: "Nuestro Escaparate",
+    desc: "El ARTE de la mesa y el Arte del Vino ."
+  }
+  {
     fileName: "IMG_4292.jpeg", 
     title: "La Mesa Imperial",
     desc: "Iluminación de diseño y madera noble para banquetes inolvidables."
