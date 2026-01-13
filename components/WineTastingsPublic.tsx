@@ -75,7 +75,25 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
       console.error("Error al reservar plazas:", error);
       alert("Error al reservar: " + error.message);
     } else {
-      alert("¡Reserva confirmada! Te esperamos en Dobao Gourmet.");
+      // Notificación vía mailto:
+      const subject = encodeURIComponent(`Nueva Reserva de Cata: ${selectedTasting.name}`);
+      const body = encodeURIComponent(
+        `Hola Dobao Gourmet,\n\n` +
+        ` Me gustaría hacer una reserva para la cata : \n\n` +
+        `EVENTO: ${selectedTasting.name}\n` +
+        `FECHA: ${safeFormat(selectedTasting.date, 'dd/MM/yyyy')}\n` +
+        `TURNO: ${selectedTasting.slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena'}\n` +
+        `------------------------------------------\n` +
+        `CLIENTE: ${formData.name}\n` +
+        `TELÉFONO: ${formData.phone}\n` +
+        `EMAIL: ${formData.email}\n` +
+        `PLAZAS: ${bookingSeats}\n\n` +
+        `Saludos.`
+      );
+      
+      window.location.href = `mailto:reservas@dobaogourmet.com?subject=${subject}&body=${body}`;
+
+      alert("¡Reserva confirmada! Te esperamos en Dobao Gourmet. (Se abrirá tu gestor de correo para la notificación)");
       setSelectedTasting(null);
       setFormData({ name: '', email: '', phone: '' });
     }
