@@ -11,8 +11,8 @@ const IMAGES = [
   },
   {
     fileName: "IMG_4293.jpeg",
-    title: "La Vinoteca",
-    desc: "Nuestra cava climatizada con una selección exclusiva para nuestros socios."
+    title: "El ARTE de nuestro Escaparate",
+    desc: "El ARTE es parte de nuestro saber hacer ."
   },
   {
     fileName: "IMG_4297.jpeg",
