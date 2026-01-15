@@ -160,6 +160,41 @@ const App: React.FC = () => {
     const { error } = await supabase.from('reservations').insert([payload]);
 
     if (!error) {
+      // Configuración del envío de correo (Similar a WineTastingsPublic)
+      const slotText = selectedSlot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena';
+      const activeServices = Object.entries(formData.services)
+        .filter(([_, active]) => active)
+        .map(([key]) => {
+          const names: Record<string, string> = {
+            catering: 'Catering',
+            cleaning: 'Limpieza',
+            multimedia: 'Multimedia',
+            vinoteca: 'Vinoteca',
+            beerEstrella: 'Barril Estrella',
+            beer1906: 'Barril 1906'
+          };
+          return names[key] || key;
+        }).join(', ');
+
+      const subject = encodeURIComponent(`Nueva Solicitud de Reserva: ${formData.name}`);
+      const body = encodeURIComponent(
+        `Hola Dobao Gourmet,\n\n` +
+        `Se ha recibido una nueva solicitud de reserva para el local:\n\n` +
+        `FECHA: ${format(selectedDate, 'dd/MM/yyyy')}\n` +
+        `TURNO: ${slotText}\n` +
+        `INVITADOS: ${formData.guests}\n` +
+        `------------------------------------------\n` +
+        `CLIENTE: ${formData.name}\n` +
+        `TELÉFONO: ${formData.phone}\n` +
+        `EMAIL: ${formData.email}\n` +
+        `MOTIVO: ${formData.purpose || 'No especificado'}\n` +
+        `COMENTARIOS: ${formData.comments || 'Sin comentarios adicionales'}\n` +
+        `SERVICIOS EXTRAS: ${activeServices || 'Solo limpieza'}\n\n` +
+        `Saludos.`
+      );
+      
+      window.location.href = `mailto:reservas@dobaogourmet.com?subject=${subject}&body=${body}`;
+
       await fetchAllData();
       setShowSuccessModal(true);
       setSelectedDate(null);
