@@ -47,11 +47,20 @@ const App: React.FC = () => {
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
-      const [resResult, wineResult, blockedResult] = await Promise.allSettled([
+      const [resResult, wineResult, attendeesResult, blockedResult] = await Promise.allSettled([
         supabase.from('reservations').select('*'),
         supabase.from('wine_tastings').select('*'),
+        supabase.from('tasting_attendees').select('tasting_id, seats'),
         supabase.from('blocked_days').select('id, date, reason')
       ]);
+
+      // Map attendees to get counts per tasting
+      const counts: Record<string, number> = {};
+      if (attendeesResult.status === 'fulfilled' && attendeesResult.value.data) {
+        attendeesResult.value.data.forEach(item => {
+          counts[item.tasting_id] = (counts[item.tasting_id] || 0) + (item.seats || 0);
+        });
+      }
 
       if (resResult.status === 'fulfilled') {
         const { data, error } = resResult.value;
@@ -85,7 +94,8 @@ const App: React.FC = () => {
             name: t.name,
             maxCapacity: t.max_capacity,
             pricePerPerson: t.price_per_person,
-            description: t.description
+            description: t.description,
+            currentAttendees: counts[t.id] || 0
           })));
         }
       }
@@ -154,6 +164,16 @@ const App: React.FC = () => {
       setShowSuccessModal(true);
       setSelectedDate(null);
       setSelectedSlot(null);
+      setFormData({
+        ...formData,
+        name: '', email: '', phone: '', guests: 10, purpose: '', comments: '',
+        services: { 
+          catering: false, cleaning: true, multimedia: false, 
+          vinoteca: false, beerEstrella: false, beer1906: false 
+        }
+      });
+    } else {
+      alert("Error al guardar reserva: " + error.message);
     }
     setIsSubmitting(false);
   };
@@ -167,6 +187,16 @@ const App: React.FC = () => {
     } else {
       setLoginError(true);
     }
+  };
+
+  const toggleService = (key: keyof AdditionalServices) => {
+    setFormData(prev => {
+      const newServices = { ...prev.services, [key]: !prev.services[key] };
+      // Mutual exclusion for beers
+      if (key === 'beerEstrella' && newServices[key]) newServices.beer1906 = false;
+      if (key === 'beer1906' && newServices[key]) newServices.beerEstrella = false;
+      return { ...prev, services: newServices };
+    });
   };
 
   return (
@@ -235,11 +265,60 @@ const App: React.FC = () => {
                         ))}
                       </div>
 
-                      <div className={`space-y-8 ${!selectedSlot ? 'opacity-20 pointer-events-none' : ''}`}>
+                      <div className={`space-y-6 ${!selectedSlot ? 'opacity-20 pointer-events-none' : ''}`}>
                         <div className="grid sm:grid-cols-2 gap-4">
                           <input type="text" required placeholder="Nombre completo" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                           <input type="tel" required placeholder="Teléfono" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
                         </div>
+                        
+                        <div className="grid sm:grid-cols-2 gap-4">
+                          <input type="email" required placeholder="Email de contacto" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                          <div className="flex items-center bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mr-4">Invitados:</span>
+                            <input type="number" min="1" max="35" className="bg-transparent text-white outline-none w-full" value={formData.guests} onChange={e => setFormData({...formData, guests: parseInt(e.target.value) || 10})} />
+                          </div>
+                        </div>
+
+                        <input type="text" placeholder="Motivo del evento (Ej: Cumpleaños, Reunión de empresa...)" className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059]" value={formData.purpose} onChange={e => setFormData({...formData, purpose: e.target.value})} />
+
+                        <textarea 
+                          placeholder="Comentarios adicionales o peticiones especiales..." 
+                          className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#C5A059] min-h-[120px] resize-none" 
+                          value={formData.comments} 
+                          onChange={e => setFormData({...formData, comments: e.target.value})}
+                        />
+                        
+                        {/* Punto 1: Implementación de Servicios Adicionales */}
+                        <div className="space-y-6 pt-4 border-t border-white/5">
+                          <h4 className="text-[10px] font-bold text-[#C5A059] uppercase tracking-widest">Servicios Exclusivos</h4>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            <button type="button" onClick={() => toggleService('catering')} className={`flex items-center gap-3 p-4 rounded-xl border text-[10px] font-bold uppercase transition-all ${formData.services.catering ? 'bg-[#C5A059]/10 border-[#C5A059] text-[#C5A059]' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                              <div className={`w-3 h-3 rounded-full ${formData.services.catering ? 'bg-[#C5A059]' : 'bg-white/10'}`}></div>
+                              Catering
+                            </button>
+                            <button type="button" onClick={() => toggleService('multimedia')} className={`flex items-center gap-3 p-4 rounded-xl border text-[10px] font-bold uppercase transition-all ${formData.services.multimedia ? 'bg-[#C5A059]/10 border-[#C5A059] text-[#C5A059]' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                              <div className={`w-3 h-3 rounded-full ${formData.services.multimedia ? 'bg-[#C5A059]' : 'bg-white/10'}`}></div>
+                              Multimedia
+                            </button>
+                            <button type="button" onClick={() => toggleService('vinoteca')} className={`flex items-center gap-3 p-4 rounded-xl border text-[10px] font-bold uppercase transition-all ${formData.services.vinoteca ? 'bg-[#C5A059]/10 border-[#C5A059] text-[#C5A059]' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                              <div className={`w-3 h-3 rounded-full ${formData.services.vinoteca ? 'bg-[#C5A059]' : 'bg-white/10'}`}></div>
+                              Vinoteca
+                            </button>
+                            <button type="button" onClick={() => toggleService('beerEstrella')} className={`flex items-center gap-3 p-4 rounded-xl border text-[10px] font-bold uppercase transition-all ${formData.services.beerEstrella ? 'bg-[#C5A059]/10 border-[#C5A059] text-[#C5A059]' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                              <div className={`w-3 h-3 rounded-full ${formData.services.beerEstrella ? 'bg-[#C5A059]' : 'bg-white/10'}`}></div>
+                              Barril Estrella
+                            </button>
+                            <button type="button" onClick={() => toggleService('beer1906')} className={`flex items-center gap-3 p-4 rounded-xl border text-[10px] font-bold uppercase transition-all ${formData.services.beer1906 ? 'bg-[#C5A059]/10 border-[#C5A059] text-[#C5A059]' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                              <div className={`w-3 h-3 rounded-full ${formData.services.beer1906 ? 'bg-[#C5A059]' : 'bg-white/10'}`}></div>
+                              Barril 1906
+                            </button>
+                            <div className="flex items-center gap-3 p-4 rounded-xl border bg-[#C5A059]/5 border-[#C5A059]/20 text-[10px] font-bold uppercase text-[#C5A059] opacity-50 cursor-default">
+                              <div className="w-3 h-3 rounded-full bg-[#C5A059]"></div>
+                              Limpieza incl.
+                            </div>
+                          </div>
+                        </div>
+
                         <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-6 rounded-2xl hover:bg-white transition-all uppercase tracking-widest text-sm shadow-xl">
                           {isSubmitting ? 'Procesando...' : 'Solicitar Reserva'}
                         </button>

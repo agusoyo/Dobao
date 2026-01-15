@@ -35,27 +35,40 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
   const fetchTastings = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Get tastings and counts
+      const { data: tastings, error: tError } = await supabase
         .from('wine_tastings')
         .select('*')
         .gte('date', format(new Date(), 'yyyy-MM-dd'))
         .order('date', { ascending: true });
 
-      if (error) {
-        console.error('Error cargando catas públicas:', error.message, error.details);
-      } else if (data) {
-        setLocalTastings(data.map(t => ({
+      if (tError) throw tError;
+
+      const { data: attendees, error: aError } = await supabase
+        .from('tasting_attendees')
+        .select('tasting_id, seats');
+      
+      if (aError) throw aError;
+
+      const counts: Record<string, number> = {};
+      (attendees || []).forEach(item => {
+        counts[item.tasting_id] = (counts[item.tasting_id] || 0) + (item.seats || 0);
+      });
+
+      if (tastings) {
+        setLocalTastings(tastings.map(t => ({
           id: t.id,
           date: t.date,
           slot: t.slot as ReservationSlot,
           name: t.name,
           maxCapacity: t.max_capacity,
           pricePerPerson: t.price_per_person,
-          description: t.description
+          description: t.description,
+          currentAttendees: counts[t.id] || 0
         })));
       }
     } catch (err: any) {
-      console.error("Error inesperado en catas públicas:", err?.message || err);
+      console.error("Error cargando catas:", err?.message);
     } finally {
       setLoading(false);
     }
@@ -64,6 +77,14 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedTasting) return;
+
+    // Aforo check before submission
+    const currentOccupancy = selectedTasting.currentAttendees || 0;
+    if (currentOccupancy + bookingSeats > selectedTasting.maxCapacity) {
+      alert(`Lo sentimos, solo quedan ${selectedTasting.maxCapacity - currentOccupancy} plazas libres.`);
+      return;
+    }
+
     setIsSubmitting(true);
     
     const { error } = await supabase
@@ -77,7 +98,6 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
       }]);
 
     if (error) {
-      console.error("Error al reservar plazas:", error.message);
       alert("Error al reservar: " + error.message);
     } else {
       const subject = encodeURIComponent(`Nueva Reserva de Cata: ${selectedTasting.name}`);
@@ -99,6 +119,7 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
       alert("¡Reserva confirmada! Te esperamos en Dobao Gourmet. (Se abrirá tu gestor de correo para la notificación)");
       setSelectedTasting(null);
       setFormData({ name: '', email: '', phone: '' });
+      if (!externalTastings) fetchTastings();
     }
     setIsSubmitting(false);
   };
@@ -127,36 +148,53 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
               Próximamente anunciaremos nuevas fechas.
             </div>
           ) : (
-            localTastings.map(t => (
-              <div key={t.id} className="bg-[#141414] rounded-[2.5rem] border border-white/5 overflow-hidden group hover:border-[#C5A059]/30 transition-all duration-500 shadow-2xl">
-                <div className="p-8 md:p-10 flex flex-col h-full">
-                  <div className="flex justify-between items-start mb-6">
-                     <div className="text-center bg-white/5 px-4 py-2 rounded-2xl border border-white/10">
-                        <div className="text-[#C5A059] text-xl font-serif leading-none">{safeFormat(t.date, 'dd')}</div>
-                        <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{safeFormat(t.date, 'MMM')}</div>
-                     </div>
-                     <div className="text-right">
-                        <div className="text-2xl font-serif text-white">{t.pricePerPerson}€</div>
-                        <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">por persona</div>
-                     </div>
-                  </div>
+            localTastings.map(t => {
+              const freeSeats = t.maxCapacity - (t.currentAttendees || 0);
+              const isFull = freeSeats <= 0;
+              
+              return (
+                <div key={t.id} className="bg-[#141414] rounded-[2.5rem] border border-white/5 overflow-hidden group hover:border-[#C5A059]/30 transition-all duration-500 shadow-2xl">
+                  <div className="p-8 md:p-10 flex flex-col h-full">
+                    <div className="flex justify-between items-start mb-6">
+                       <div className="text-center bg-white/5 px-4 py-2 rounded-2xl border border-white/10">
+                          <div className="text-[#C5A059] text-xl font-serif leading-none">{safeFormat(t.date, 'dd')}</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{safeFormat(t.date, 'MMM')}</div>
+                       </div>
+                       <div className="text-right">
+                          <div className="text-2xl font-serif text-white">{t.pricePerPerson}€</div>
+                          <div className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">por persona</div>
+                       </div>
+                    </div>
 
-                  <h3 className="text-2xl font-serif text-white mb-4 group-hover:text-[#C5A059] transition-colors">{t.name}</h3>
-                  <p className="text-slate-400 text-base leading-relaxed mb-8 flex-1 italic">
-                    {t.description || "Una sesión única para descubrir matices seleccionados."}
-                  </p>
+                    <h3 className="text-2xl font-serif text-white mb-4 group-hover:text-[#C5A059] transition-colors">{t.name}</h3>
+                    <p className="text-slate-400 text-base leading-relaxed mb-4 flex-1 italic">
+                      {t.description || "Una sesión única para descubrir matices seleccionados."}
+                    </p>
 
-                  <div className="pt-6 border-t border-white/5">
-                    <button 
-                      onClick={() => setSelectedTasting(t)}
-                      className="w-full bg-white/5 border border-white/10 text-white font-bold py-4 rounded-2xl hover:bg-[#C5A059] hover:text-black transition-all uppercase text-[10px]"
-                    >
-                      Reservar Plaza
-                    </button>
+                    <div className="mb-6 flex items-center justify-between bg-black/30 p-4 rounded-2xl border border-white/5">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Aforo:</span>
+                      <span className={`text-[10px] font-bold uppercase tracking-widest ${isFull ? 'text-red-500' : freeSeats <= 3 ? 'text-amber-500 animate-pulse' : 'text-emerald-500'}`}>
+                        {isFull ? 'Completo' : `${freeSeats} plazas libres`}
+                      </span>
+                    </div>
+
+                    <div className="pt-6 border-t border-white/5">
+                      <button 
+                        disabled={isFull}
+                        onClick={() => setSelectedTasting(t)}
+                        className={`w-full font-bold py-4 rounded-2xl transition-all uppercase text-[10px] ${
+                          isFull 
+                          ? 'bg-red-950/20 text-red-500 border border-red-900/30 cursor-not-allowed' 
+                          : 'bg-white/5 border border-white/10 text-white hover:bg-[#C5A059] hover:text-black'
+                        }`}
+                      >
+                        {isFull ? 'Aforo Completo' : 'Reservar Plaza'}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -167,21 +205,34 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
             <button onClick={() => setSelectedTasting(null)} className="absolute top-8 right-8 text-slate-500 hover:text-white">
                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
-            <h3 className="text-3xl font-serif text-white mb-8">{selectedTasting.name}</h3>
+            <h3 className="text-3xl font-serif text-white mb-2">{selectedTasting.name}</h3>
+            <p className="text-[#C5A059] text-[10px] font-bold uppercase tracking-widest mb-8">
+              {selectedTasting.maxCapacity - (selectedTasting.currentAttendees || 0)} plazas disponibles
+            </p>
+            
             <form onSubmit={handleBook} className="space-y-6">
               <input required placeholder="Nombre" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#C5A059]" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
               <input required placeholder="Teléfono" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#C5A059]" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} />
               <input required type="email" placeholder="Email" className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#C5A059]" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+              
               <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Plazas:</span>
                  <div className="flex items-center gap-4">
                     <button type="button" onClick={() => setBookingSeats(Math.max(1, bookingSeats - 1))} className="w-8 h-8 rounded-full bg-white/10 text-white">-</button>
                     <span className="text-white font-serif text-xl">{bookingSeats}</span>
-                    <button type="button" onClick={() => setBookingSeats(bookingSeats + 1)} className="w-8 h-8 rounded-full bg-white/10 text-white">+</button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const maxLibres = selectedTasting.maxCapacity - (selectedTasting.currentAttendees || 0);
+                        if (bookingSeats < maxLibres) setBookingSeats(bookingSeats + 1);
+                      }} 
+                      className="w-8 h-8 rounded-full bg-white/10 text-white"
+                    >+</button>
                  </div>
               </div>
-              <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-5 rounded-2xl hover:bg-white uppercase text-xs">
-                {isSubmitting ? 'Procesando...' : `Confirmar (${selectedTasting.pricePerPerson * bookingSeats}€)`}
+              
+              <button type="submit" disabled={isSubmitting} className="w-full bg-[#C5A059] text-black font-bold py-5 rounded-2xl hover:bg-white uppercase text-xs shadow-lg shadow-[#C5A059]/10">
+                {isSubmitting ? 'Procesando...' : `Confirmar Reserva (${selectedTasting.pricePerPerson * bookingSeats}€)`}
               </button>
             </form>
           </div>
