@@ -34,26 +34,31 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
 
   const fetchTastings = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('wine_tastings')
-      .select('*')
-      .gte('date', format(new Date(), 'yyyy-MM-dd'))
-      .order('date', { ascending: true });
+    try {
+      const { data, error } = await supabase
+        .from('wine_tastings')
+        .select('*')
+        .gte('date', format(new Date(), 'yyyy-MM-dd'))
+        .order('date', { ascending: true });
 
-    if (error) {
-      console.error('Error cargando catas públicas:', error);
-    } else if (data) {
-      setLocalTastings(data.map(t => ({
-        id: t.id,
-        date: t.date,
-        slot: t.slot as ReservationSlot,
-        name: t.name,
-        maxCapacity: t.max_capacity,
-        pricePerPerson: t.price_per_person,
-        description: t.description
-      })));
+      if (error) {
+        console.error('Error cargando catas públicas:', error.message, error.details);
+      } else if (data) {
+        setLocalTastings(data.map(t => ({
+          id: t.id,
+          date: t.date,
+          slot: t.slot as ReservationSlot,
+          name: t.name,
+          maxCapacity: t.max_capacity,
+          pricePerPerson: t.price_per_person,
+          description: t.description
+        })));
+      }
+    } catch (err: any) {
+      console.error("Error inesperado en catas públicas:", err?.message || err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleBook = async (e: React.FormEvent) => {
@@ -72,17 +77,15 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
       }]);
 
     if (error) {
-      console.error("Error al reservar plazas:", error);
+      console.error("Error al reservar plazas:", error.message);
       alert("Error al reservar: " + error.message);
     } else {
-      // Notificación vía mailto:
       const subject = encodeURIComponent(`Nueva Reserva de Cata: ${selectedTasting.name}`);
       const body = encodeURIComponent(
         `Hola Dobao Gourmet,\n\n` +
         ` Me gustaría hacer una reserva para la cata : \n\n` +
         `EVENTO: ${selectedTasting.name}\n` +
         `FECHA: ${safeFormat(selectedTasting.date, 'dd/MM/yyyy')}\n` +
-        `TURNO: ${selectedTasting.slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena'}\n` +
         `------------------------------------------\n` +
         `CLIENTE: ${formData.name}\n` +
         `TELÉFONO: ${formData.phone}\n` +
@@ -139,15 +142,11 @@ const WineTastingsPublic: React.FC<WineTastingsPublicProps> = ({ externalTasting
                   </div>
 
                   <h3 className="text-2xl font-serif text-white mb-4 group-hover:text-[#C5A059] transition-colors">{t.name}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed mb-8 flex-1 italic line-clamp-3">
+                  <p className="text-slate-400 text-base leading-relaxed mb-8 flex-1 italic">
                     {t.description || "Una sesión única para descubrir matices seleccionados."}
                   </p>
 
-                  <div className="space-y-4 pt-6 border-t border-white/5">
-                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest">
-                      <span className="text-slate-500">Horario:</span>
-                      <span className="text-white">{t.slot === ReservationSlot.MIDDAY ? 'Comida (14h)' : 'Cena (21h)'}</span>
-                    </div>
+                  <div className="pt-6 border-t border-white/5">
                     <button 
                       onClick={() => setSelectedTasting(t)}
                       className="w-full bg-white/5 border border-white/10 text-white font-bold py-4 rounded-2xl hover:bg-[#C5A059] hover:text-black transition-all uppercase text-[10px]"

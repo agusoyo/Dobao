@@ -1,12 +1,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Reservation, ReservationStatus, AdditionalServices, ReservationSlot, WineTasting } from './types';
+import { Reservation, ReservationStatus, AdditionalServices, ReservationSlot, WineTasting, BlockedDay } from './types';
 import { INITIAL_RESERVATIONS, TXOKO_CONFIG } from './constants';
 import Calendar from './components/Calendar';
 import AdminDashboard from './components/AdminDashboard';
 import Gallery from './components/Gallery';
 import WineTastingConfig from './components/WineTastingConfig';
 import WineTastingsPublic from './components/WineTastingsPublic';
+import BlockedDaysConfig from './components/BlockedDaysConfig';
 import Home from './components/Home';
 import { supabase } from './services/supabaseClient';
 import { format } from 'date-fns';
@@ -14,12 +15,13 @@ import { es } from 'date-fns/locale';
 
 const HERO_IMAGE_URL = "https://raw.githubusercontent.com/agusoyo/Dobao/main/IMG_4292.jpeg";
 
-type ViewState = 'home' | 'booking' | 'admin' | 'gallery' | 'wine-config' | 'tastings';
+type ViewState = 'home' | 'booking' | 'admin' | 'gallery' | 'wine-config' | 'tastings' | 'blocked-days';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('home');
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tastings, setTastings] = useState<WineTasting[]>([]);
+  const [blockedDates, setBlockedDates] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<ReservationSlot | null>(null);
@@ -45,41 +47,58 @@ const App: React.FC = () => {
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: resData, error: resError } = await supabase.from('reservations').select('*');
-      if (resError) throw resError;
-      
-      const mappedReservations = (resData || []).map(r => ({
-        id: r.id,
-        date: r.date,
-        slot: (r.slot || ReservationSlot.NIGHT) as ReservationSlot,
-        customerName: r.customer_name,
-        email: r.email,
-        phone: r.phone,
-        guests: r.guests,
-        purpose: r.purpose,
-        comments: r.comments,
-        eventCost: r.event_cost,
-        status: (r.status || ReservationStatus.PENDING) as ReservationStatus,
-        services: r.services || {},
-        createdAt: r.created_at
-      }));
-      setReservations(mappedReservations);
+      const [resResult, wineResult, blockedResult] = await Promise.allSettled([
+        supabase.from('reservations').select('*'),
+        supabase.from('wine_tastings').select('*'),
+        supabase.from('blocked_days').select('id, date, reason')
+      ]);
 
-      const { data: wineData, error: wineError } = await supabase.from('wine_tastings').select('*');
-      if (wineError) throw wineError;
-      
-      const mappedTastings = (wineData || []).map(t => ({
-        id: t.id,
-        date: t.date,
-        slot: (t.slot || ReservationSlot.NIGHT) as ReservationSlot,
-        name: t.name,
-        maxCapacity: t.max_capacity,
-        pricePerPerson: t.price_per_person,
-        description: t.description
-      }));
-      setTastings(mappedTastings);
+      if (resResult.status === 'fulfilled') {
+        const { data, error } = resResult.value;
+        if (!error && data) {
+          setReservations(data.map(r => ({
+            id: r.id,
+            date: r.date,
+            slot: (r.slot || ReservationSlot.NIGHT) as ReservationSlot,
+            customerName: r.customer_name,
+            email: r.email,
+            phone: r.phone,
+            guests: r.guests,
+            purpose: r.purpose,
+            comments: r.comments,
+            eventCost: r.event_cost,
+            deposit: r.deposit || 0,
+            status: (r.status || ReservationStatus.PENDING) as ReservationStatus,
+            services: r.services || {},
+            createdAt: r.created_at
+          })));
+        }
+      }
+
+      if (wineResult.status === 'fulfilled') {
+        const { data, error } = wineResult.value;
+        if (!error && data) {
+          setTastings(data.map(t => ({
+            id: t.id,
+            date: t.date,
+            slot: (t.slot || ReservationSlot.NIGHT) as ReservationSlot,
+            name: t.name,
+            maxCapacity: t.max_capacity,
+            pricePerPerson: t.price_per_person,
+            description: t.description
+          })));
+        }
+      }
+
+      if (blockedResult.status === 'fulfilled') {
+        const { data, error } = blockedResult.value;
+        if (!error && data) {
+          setBlockedDates(data.map(b => b.date));
+        }
+      }
+
     } catch (err) {
-      console.error("Error crítico de base de datos:", err);
+      console.error("Error sincronizando:", err);
     } finally {
       setLoading(false);
     }
@@ -89,13 +108,6 @@ const App: React.FC = () => {
     fetchAllData();
   }, [fetchAllData]);
 
-  const combinedOccupancy = [
-    ...reservations.filter(r => r.status !== ReservationStatus.CANCELLED).map(r => ({ date: r.date, slot: r.slot })),
-    ...tastings.map(t => ({ date: t.date, slot: t.slot }))
-  ];
-
-  const tastingDates = tastings.map(t => t.date);
-
   const handleUpdateStatus = async (id: string, status: ReservationStatus) => {
     const { error } = await supabase.from('reservations').update({ status }).eq('id', id);
     if (!error) fetchAllData();
@@ -103,6 +115,11 @@ const App: React.FC = () => {
 
   const handleUpdateCost = async (id: string, cost: number) => {
     const { error } = await supabase.from('reservations').update({ event_cost: cost }).eq('id', id);
+    if (!error) fetchAllData();
+  };
+
+  const handleUpdateDeposit = async (id: string, deposit: number) => {
+    const { error } = await supabase.from('reservations').update({ deposit }).eq('id', id);
     if (!error) fetchAllData();
   };
 
@@ -132,9 +149,7 @@ const App: React.FC = () => {
 
     const { error } = await supabase.from('reservations').insert([payload]);
 
-    if (error) {
-      alert("Error: " + error.message);
-    } else {
+    if (!error) {
       await fetchAllData();
       setShowSuccessModal(true);
       setSelectedDate(null);
@@ -172,7 +187,7 @@ const App: React.FC = () => {
             <button onClick={() => setView('booking')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'booking' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Reserva Local</button>
             <button onClick={() => setView('tastings')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'tastings' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Catas</button>
             <button onClick={() => setView('gallery')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'gallery' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Galería</button>
-            <button onClick={() => setView('admin')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'admin' || view === 'wine-config' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Admin</button>
+            <button onClick={() => setView('admin')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${['admin', 'wine-config', 'blocked-days'].includes(view) ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Admin</button>
           </nav>
         </div>
       </header>
@@ -203,8 +218,9 @@ const App: React.FC = () => {
                   <Calendar 
                     selectedDate={selectedDate} 
                     onDateSelect={setSelectedDate} 
-                    reservations={combinedOccupancy}
-                    tastingDates={tastingDates} 
+                    reservations={[...reservations.filter(r => r.status !== ReservationStatus.CANCELLED).map(r => ({ date: r.date, slot: r.slot })), ...tastings.map(t => ({ date: t.date, slot: t.slot }))]}
+                    tastingDates={tastings.map(t => t.date)} 
+                    blockedDates={blockedDates}
                   />
                 </div>
                 <div className="lg:col-span-7">
@@ -256,11 +272,13 @@ const App: React.FC = () => {
                 reservations={reservations} 
                 onUpdateStatus={handleUpdateStatus}
                 onUpdateCost={handleUpdateCost}
+                onUpdateDeposit={handleUpdateDeposit}
                 onUpdate={() => {}}
                 onDelete={handleDelete}
                 onImport={() => {}}
                 onBackToBooking={() => setView('home')}
                 onGoToWineConfig={() => setView('wine-config')}
+                onGoToBlockedDays={() => setView('blocked-days')}
                 onLogout={() => setIsAdminAuthenticated(false)}
               />
             )}
@@ -270,6 +288,12 @@ const App: React.FC = () => {
         {view === 'wine-config' && isAdminAuthenticated && (
           <div className="pt-32 min-h-screen bg-slate-50 text-slate-900">
             <WineTastingConfig onBack={() => setView('admin')} onRefresh={fetchAllData} externalTastings={tastings} />
+          </div>
+        )}
+
+        {view === 'blocked-days' && isAdminAuthenticated && (
+          <div className="pt-32 min-h-screen bg-slate-50 text-slate-900">
+            <BlockedDaysConfig onBack={() => { setView('admin'); fetchAllData(); }} />
           </div>
         )}
       </main>

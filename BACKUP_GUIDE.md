@@ -4,7 +4,7 @@
 Este documento detalla cómo restaurar el sistema a un punto anterior.
 
 ## 1. Puntos de Restauración del Código
-Última versión estable: **v1.5.0 - Gestión de Depósitos y Edición de Asistentes**.
+Última versión estable: **v1.6.0 - Gestión de Días Bloqueados**.
 
 ## 2. Restauración de Base de Datos (Supabase)
 
@@ -50,7 +50,17 @@ CREATE TABLE tasting_attendees (
   email TEXT NOT NULL,
   phone TEXT NOT NULL,
   seats INTEGER NOT NULL DEFAULT 1,
-  deposit NUMERIC DEFAULT 0, -- Columna para depósitos manuales
+  deposit NUMERIC DEFAULT 0,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+```
+
+### Tabla de Días Bloqueados:
+```sql
+CREATE TABLE blocked_days (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  date DATE NOT NULL UNIQUE,
+  reason TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 ```

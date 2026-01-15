@@ -24,6 +24,7 @@ export interface Reservation {
   purpose: string;
   comments?: string;
   eventCost?: number;
+  deposit?: number;
   status: ReservationStatus;
   services: AdditionalServices;
   createdAt: string;
@@ -49,7 +50,13 @@ export interface TastingAttendee {
   phone: string;
   seats: number;
   createdAt: string;
-  deposit?: number; // Nuevo: Dinero entregado manualmente
+  deposit?: number;
+}
+
+export interface BlockedDay {
+  id: string;
+  date: string;
+  reason?: string;
 }
 
 export enum ReservationStatus {

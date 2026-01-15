@@ -17,10 +17,17 @@ interface CalendarProps {
   selectedDate: Date | null;
   onDateSelect: (date: Date) => void;
   reservations: { date: string, slot: ReservationSlot }[];
-  tastingDates?: string[]; // Nueva propiedad para identificar días de cata
+  tastingDates?: string[]; 
+  blockedDates?: string[]; // Nueva propiedad para días inhabilitados
 }
 
-const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reservations, tastingDates = [] }) => {
+const Calendar: React.FC<CalendarProps> = ({ 
+  selectedDate, 
+  onDateSelect, 
+  reservations, 
+  tastingDates = [],
+  blockedDates = []
+}) => {
   const [currentMonth, setCurrentMonth] = React.useState(new Date());
 
   const today = new Date();
@@ -45,6 +52,10 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserva
 
   const getDayStatus = (date: Date) => {
     const dateStr = format(date, 'yyyy-MM-dd');
+    
+    // Si el día está bloqueado por el admin, está FULL directamente
+    if (blockedDates.includes(dateStr)) return 'FULL';
+
     const dayReservations = reservations.filter(r => r.date === dateStr);
     
     if (dayReservations.length >= 2) return 'FULL';
@@ -92,6 +103,7 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserva
           const selected = selectedDate && isSameDay(day, selectedDate);
           const sameMonth = isSameMonth(day, monthStart);
           const hasTasting = tastingDates.includes(dateStr);
+          const isBlocked = blockedDates.includes(dateStr);
 
           return (
             <button
@@ -110,12 +122,15 @@ const Calendar: React.FC<CalendarProps> = ({ selectedDate, onDateSelect, reserva
             >
               <span className="text-lg font-serif">{format(day, 'd')}</span>
               
-              {/* Prioridad visual: Si hay cata, lo mostramos primero */}
-              {hasTasting && !selected ? (
+              {hasTasting && !selected && !isBlocked ? (
                 <span className="absolute top-2 right-2 text-[7px] font-black bg-[#C5A059] text-black px-1.5 py-0.5 rounded-sm tracking-widest shadow-lg">CATA</span>
               ) : null}
 
-              {status === 'FULL' && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter">Completo</span>}
+              {status === 'FULL' && (
+                <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter">
+                  {isBlocked ? 'Inhabilitado' : 'Agotado'}
+                </span>
+              )}
               {status === 'PARTIAL' && !selected && !hasTasting && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter text-[#C5A059]">1 Turno Libre</span>}
               {hasTasting && selected && <span className="text-[7px] font-bold uppercase mt-1 tracking-tighter text-black/60">Evento de Cata</span>}
             </button>
