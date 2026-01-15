@@ -126,6 +126,29 @@ const App: React.FC = () => {
       .sort((a, b) => a.date.localeCompare(b.date))[0];
   }, [tastings]);
 
+  // Calcular qué turnos están ocupados para la fecha seleccionada
+  const occupiedSlotsForSelectedDate = useMemo(() => {
+    if (!selectedDate) return [];
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    
+    const resSlots = reservations
+      .filter(r => r.date === dateStr && r.status !== ReservationStatus.CANCELLED)
+      .map(r => r.slot);
+    
+    const tastingSlots = tastings
+      .filter(t => t.date === dateStr)
+      .map(t => t.slot);
+
+    return Array.from(new Set([...resSlots, ...tastingSlots]));
+  }, [selectedDate, reservations, tastings]);
+
+  // Resetear turno si al cambiar de fecha el turno seleccionado queda ocupado
+  useEffect(() => {
+    if (selectedSlot && occupiedSlotsForSelectedDate.includes(selectedSlot)) {
+      setSelectedSlot(null);
+    }
+  }, [selectedDate, occupiedSlotsForSelectedDate, selectedSlot]);
+
   const handleUpdateStatus = async (id: string, status: ReservationStatus) => {
     const { error } = await supabase.from('reservations').update({ status }).eq('id', id);
     if (!error) fetchAllData();
@@ -302,11 +325,24 @@ const App: React.FC = () => {
                   <div className={`bg-[#141414] rounded-[2rem] p-8 md:p-12 border border-white/5 transition-all ${!selectedDate ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
                     <form onSubmit={handleSubmit} className="space-y-10">
                       <div className="grid grid-cols-2 gap-4">
-                        {[ReservationSlot.MIDDAY, ReservationSlot.NIGHT].map(slot => (
-                          <button key={slot} type="button" onClick={() => setSelectedSlot(slot)} className={`px-4 py-5 rounded-2xl border text-center transition-all ${selectedSlot === slot ? 'bg-[#C5A059] text-black font-bold border-[#C5A059]' : 'border-white/10 text-white hover:border-[#C5A059]'}`}>
-                            {slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena'}
-                          </button>
-                        ))}
+                        {[ReservationSlot.MIDDAY, ReservationSlot.NIGHT].map(slot => {
+                          const isOccupied = occupiedSlotsForSelectedDate.includes(slot);
+                          return (
+                            <button 
+                              key={slot} 
+                              type="button" 
+                              disabled={isOccupied}
+                              onClick={() => !isOccupied && setSelectedSlot(slot)} 
+                              className={`px-4 py-5 rounded-2xl border text-center transition-all flex flex-col items-center justify-center min-h-[80px]
+                                ${isOccupied ? 'bg-red-950/20 text-red-700/50 border-red-900/10 cursor-not-allowed opacity-50' : 
+                                  selectedSlot === slot ? 'bg-[#C5A059] text-black font-bold border-[#C5A059]' : 
+                                  'border-white/10 text-white hover:border-[#C5A059]'}`}
+                            >
+                              <span className="text-sm">{slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena'}</span>
+                              {isOccupied && <span className="text-[8px] mt-1 font-black uppercase tracking-widest text-red-500">Ocupado</span>}
+                            </button>
+                          );
+                        })}
                       </div>
 
                       <div className={`space-y-6 ${!selectedSlot ? 'opacity-20 pointer-events-none' : ''}`}>
@@ -332,7 +368,6 @@ const App: React.FC = () => {
                           onChange={e => setFormData({...formData, comments: e.target.value})}
                         />
                         
-                        {/* Punto 1: Implementación de Servicios Adicionales */}
                         <div className="space-y-6 pt-4 border-t border-white/5">
                           <h4 className="text-[10px] font-bold text-[#C5A059] uppercase tracking-widest">Servicios Exclusivos</h4>
                           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
