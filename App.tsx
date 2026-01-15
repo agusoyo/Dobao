@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Reservation, ReservationStatus, AdditionalServices, ReservationSlot, WineTasting, BlockedDay } from './types';
 import { INITIAL_RESERVATIONS, TXOKO_CONFIG } from './constants';
 import Calendar from './components/Calendar';
@@ -10,7 +10,7 @@ import WineTastingsPublic from './components/WineTastingsPublic';
 import BlockedDaysConfig from './components/BlockedDaysConfig';
 import Home from './components/Home';
 import { supabase } from './services/supabaseClient';
-import { format } from 'date-fns';
+import { format, isAfter, parseISO, startOfDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const HERO_IMAGE_URL = "https://raw.githubusercontent.com/agusoyo/Dobao/main/IMG_4292.jpeg";
@@ -117,6 +117,14 @@ const App: React.FC = () => {
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
+
+  // Encontrar la próxima cata disponible
+  const nextUpcomingTasting = useMemo(() => {
+    const today = startOfDay(new Date());
+    return tastings
+      .filter(t => isAfter(parseISO(t.date), today) || t.date === format(today, 'yyyy-MM-dd'))
+      .sort((a, b) => a.date.localeCompare(b.date))[0];
+  }, [tastings]);
 
   const handleUpdateStatus = async (id: string, status: ReservationStatus) => {
     const { error } = await supabase.from('reservations').update({ status }).eq('id', id);
@@ -261,7 +269,8 @@ const App: React.FC = () => {
         {view === 'home' && (
           <Home 
             onNavigateBooking={() => setView('booking')} 
-            onNavigateTastings={() => setView('tastings')} 
+            onNavigateTastings={() => setView('tastings')}
+            nextTasting={nextUpcomingTasting}
           />
         )}
 

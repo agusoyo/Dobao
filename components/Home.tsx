@@ -1,16 +1,32 @@
 
 import React from 'react';
+import { WineTasting } from '../types';
+import { format, parseISO, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface HomeProps {
   onNavigateBooking: () => void;
   onNavigateTastings: () => void;
+  nextTasting?: WineTasting;
 }
 
-const Home: React.FC<HomeProps> = ({ onNavigateBooking, onNavigateTastings }) => {
+const Home: React.FC<HomeProps> = ({ onNavigateBooking, onNavigateTastings, nextTasting }) => {
+  const freeSeats = nextTasting ? (nextTasting.maxCapacity - (nextTasting.currentAttendees || 0)) : 0;
+  const isUrgent = freeSeats > 0 && freeSeats <= 4;
+
+  const safeFormat = (dateStr: string, formatStr: string) => {
+    try {
+      const date = parseISO(dateStr);
+      return isValid(date) ? format(date, formatStr, { locale: es }) : 'Próximamente';
+    } catch {
+      return 'Próximamente';
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col pt-24 md:pt-0 bg-[#080808]">
       {/* Hero Central */}
-      <section className="flex-1 flex flex-col lg:flex-row h-full">
+      <section className="flex-1 flex flex-col lg:flex-row h-full overflow-hidden">
         
         {/* Lado Izquierdo: Reserva de Local */}
         <div 
@@ -58,6 +74,37 @@ const Home: React.FC<HomeProps> = ({ onNavigateBooking, onNavigateTastings }) =>
               Experiencias Gourmet
             </div>
           </div>
+
+          {/* Anuncio dinámico de próxima cata */}
+          {nextTasting && (
+            <div className="absolute bottom-10 right-10 z-20 max-w-xs w-full animate-in fade-in slide-in-from-right-10 duration-1000 delay-500">
+              <div 
+                onClick={(e) => { e.stopPropagation(); onNavigateTastings(); }}
+                className="bg-black/40 backdrop-blur-xl border border-white/10 p-6 rounded-[2rem] shadow-2xl hover:border-[#C5A059]/50 hover:bg-black/60 transition-all cursor-pointer group/card"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[#C5A059] text-[9px] font-black uppercase tracking-[0.2em]">PRÓXIMA CITA</span>
+                  {isUrgent && (
+                    <div className="flex items-center gap-1.5 bg-red-500/10 px-2 py-1 rounded-full border border-red-500/20">
+                      <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                      <span className="text-red-500 text-[8px] font-black uppercase">Últimas plazas</span>
+                    </div>
+                  )}
+                </div>
+                <h4 className="text-white font-serif text-lg mb-1 group-hover/card:text-[#C5A059] transition-colors">{nextTasting.name}</h4>
+                <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-4">
+                  {safeFormat(nextTasting.date, "EEEE d 'de' MMMM")} • {nextTasting.slot === 'MIDDAY' ? 'Comida' : 'Cena'}
+                </p>
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                  <span className="text-white/40 text-[9px] font-bold uppercase tracking-widest">Desde {nextTasting.pricePerPerson}€</span>
+                  <div className="flex items-center gap-2 text-[#C5A059]">
+                    <span className="text-[9px] font-black uppercase tracking-widest group-hover/card:mr-2 transition-all">Ver detalles</span>
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
