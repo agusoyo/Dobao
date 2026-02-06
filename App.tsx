@@ -8,6 +8,7 @@ import Gallery from './components/Gallery';
 import WineTastingConfig from './components/WineTastingConfig';
 import WineTastingsPublic from './components/WineTastingsPublic';
 import BlockedDaysConfig from './components/BlockedDaysConfig';
+import AdminCalendarView from './components/AdminCalendarView';
 import Home from './components/Home';
 import { supabase } from './services/supabaseClient';
 import { format, isAfter, parseISO, startOfDay } from 'date-fns';
@@ -15,7 +16,7 @@ import { es } from 'date-fns/locale';
 
 const HERO_IMAGE_URL = "https://raw.githubusercontent.com/agusoyo/Dobao/main/IMG_4292.jpeg";
 
-type ViewState = 'home' | 'booking' | 'admin' | 'gallery' | 'wine-config' | 'tastings' | 'blocked-days';
+type ViewState = 'home' | 'booking' | 'admin' | 'admin-list' | 'gallery' | 'wine-config' | 'tastings' | 'blocked-days' | 'admin-calendar';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('home');
@@ -54,7 +55,6 @@ const App: React.FC = () => {
         supabase.from('blocked_days').select('id, date, reason')
       ]);
 
-      // Map attendees to get counts per tasting
       const counts: Record<string, number> = {};
       if (attendeesResult.status === 'fulfilled' && attendeesResult.value.data) {
         attendeesResult.value.data.forEach(item => {
@@ -118,7 +118,6 @@ const App: React.FC = () => {
     fetchAllData();
   }, [fetchAllData]);
 
-  // Encontrar la próxima cata disponible
   const nextUpcomingTasting = useMemo(() => {
     const today = startOfDay(new Date());
     return tastings
@@ -126,7 +125,6 @@ const App: React.FC = () => {
       .sort((a, b) => a.date.localeCompare(b.date))[0];
   }, [tastings]);
 
-  // Calcular qué turnos están ocupados para la fecha seleccionada
   const occupiedSlotsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
     const dateStr = format(selectedDate, 'yyyy-MM-dd');
@@ -142,7 +140,6 @@ const App: React.FC = () => {
     return Array.from(new Set([...resSlots, ...tastingSlots]));
   }, [selectedDate, reservations, tastings]);
 
-  // Resetear turno si al cambiar de fecha el turno seleccionado queda ocupado
   useEffect(() => {
     if (selectedSlot && occupiedSlotsForSelectedDate.includes(selectedSlot)) {
       setSelectedSlot(null);
@@ -191,7 +188,6 @@ const App: React.FC = () => {
     const { error } = await supabase.from('reservations').insert([payload]);
 
     if (!error) {
-      // Configuración del envío de correo (Similar a WineTastingsPublic)
       const slotText = selectedSlot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena';
       const activeServices = Object.entries(formData.services)
         .filter(([_, active]) => active)
@@ -258,7 +254,6 @@ const App: React.FC = () => {
   const toggleService = (key: keyof AdditionalServices) => {
     setFormData(prev => {
       const newServices = { ...prev.services, [key]: !prev.services[key] };
-      // Mutual exclusion for beers
       if (key === 'beerEstrella' && newServices[key]) newServices.beer1906 = false;
       if (key === 'beer1906' && newServices[key]) newServices.beerEstrella = false;
       return { ...prev, services: newServices };
@@ -283,7 +278,7 @@ const App: React.FC = () => {
             <button onClick={() => setView('booking')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'booking' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Reserva Local</button>
             <button onClick={() => setView('tastings')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'tastings' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Catas</button>
             <button onClick={() => setView('gallery')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'gallery' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Galería</button>
-            <button onClick={() => setView('admin')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${['admin', 'wine-config', 'blocked-days'].includes(view) ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Admin</button>
+            <button onClick={() => setView('admin')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${['admin', 'admin-list', 'wine-config', 'blocked-days', 'admin-calendar'].includes(view) ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Admin</button>
           </nav>
         </div>
       </header>
@@ -426,20 +421,45 @@ const App: React.FC = () => {
                 </form>
               </div>
             ) : (
-              <AdminDashboard 
-                reservations={reservations} 
+              <AdminCalendarView 
+                reservations={reservations}
+                tastings={tastings}
+                blockedDates={blockedDates}
+                onBack={() => setView('admin-list')}
                 onUpdateStatus={handleUpdateStatus}
-                onUpdateCost={handleUpdateCost}
-                onUpdateDeposit={handleUpdateDeposit}
-                onUpdate={() => {}}
-                onDelete={handleDelete}
-                onImport={() => {}}
-                onBackToBooking={() => setView('home')}
-                onGoToWineConfig={() => setView('wine-config')}
-                onGoToBlockedDays={() => setView('blocked-days')}
-                onLogout={() => setIsAdminAuthenticated(false)}
               />
             )}
+          </div>
+        )}
+
+        {view === 'admin-list' && isAdminAuthenticated && (
+          <div className="pt-32 min-h-screen bg-slate-50 text-slate-900">
+            <AdminDashboard 
+              reservations={reservations} 
+              onUpdateStatus={handleUpdateStatus}
+              onUpdateCost={handleUpdateCost}
+              onUpdateDeposit={handleUpdateDeposit}
+              onUpdate={() => {}}
+              onDelete={handleDelete}
+              onImport={() => {}}
+              onBackToBooking={() => setView('home')}
+              onGoToWineConfig={() => setView('wine-config')}
+              onGoToBlockedDays={() => setView('blocked-days')}
+              onGoToAdminCalendar={() => setView('admin')}
+              onLogout={() => setIsAdminAuthenticated(false)}
+            />
+          </div>
+        )}
+
+        {view === 'admin-calendar' && isAdminAuthenticated && (
+          <div className="pt-32 min-h-screen bg-slate-50 text-slate-900">
+            <AdminCalendarView 
+              reservations={reservations}
+              tastings={tastings}
+              blockedDates={blockedDates}
+              onBack={() => setView('admin-list')}
+              onUpdateStatus={handleUpdateStatus}
+            />
           </div>
         )}
 

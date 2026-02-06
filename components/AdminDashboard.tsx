@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Reservation, ReservationStatus, ReservationSlot } from '../types';
-import { format, getYear, getMonth, isValid } from 'date-fns';
+import { format, getYear, getMonth, getDate, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
@@ -18,19 +18,43 @@ interface AdminDashboardProps {
   onBackToBooking: () => void;
   onGoToWineConfig?: () => void;
   onGoToBlockedDays?: () => void;
+  onGoToAdminCalendar?: () => void;
   onLogout?: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
-  reservations, onUpdateStatus, onUpdateCost, onUpdateDeposit, onDelete, onBackToBooking, onGoToWineConfig, onGoToBlockedDays, onLogout 
+  reservations, onUpdateStatus, onUpdateCost, onUpdateDeposit, onDelete, onBackToBooking, onGoToWineConfig, onGoToBlockedDays, onGoToAdminCalendar, onLogout 
 }) => {
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
+  const [filterDay, setFilterDay] = useState<string>('all');
 
   const safeFormat = (date: string | Date | undefined, formatStr: string) => {
     if (!date) return 'N/A';
     const d = new Date(date);
     return isValid(d) ? format(d, formatStr, { locale: es }) : 'N/A';
+  };
+
+  const handleStatusChange = (res: Reservation, newStatus: ReservationStatus) => {
+    onUpdateStatus(res.id, newStatus);
+    
+    // Si el estado cambia a CONFIRMED (Validado), enviamos el correo
+    if (newStatus === ReservationStatus.CONFIRMED) {
+      const subject = encodeURIComponent(`Reserva Confirmada - Dobao Gourmet`);
+      const slotText = res.slot === ReservationSlot.MIDDAY ? 'Comida' : 'Cena';
+      const body = encodeURIComponent(
+        `¡Hola ${res.customerName}!\n\n` +
+        `Nos complace comunicarte que tu reserva en Dobao Gourmet para el próximo ${safeFormat(res.date, 'dd/MM/yyyy')} (Turno de ${slotText}) ha sido VALIDADA con éxito.\n\n` +
+        `Ya tenemos todo preparado para que disfrutes de nuestro espacio exclusivo. Queremos agradecerte sinceramente que nos hayas elegido para tu evento; trabajamos cada detalle para que vuestra experiencia sea memorable.\n\n` +
+        `Si necesitas realizar cualquier ajuste en los servicios contratados o tienes alguna duda de última hora, estamos a tu entera disposición.\n\n` +
+        `¡Estamos deseando recibiros!\n\n` +
+        `Atentamente,\n` +
+        `El equipo de Dobao Gourmet`
+      );
+      
+      // Abrir el gestor de correo del sistema
+      window.location.href = `mailto:${res.email}?subject=${subject}&body=${body}`;
+    }
   };
 
   const filteredReservations = useMemo(() => {
@@ -40,13 +64,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       
       const matchYear = filterYear === 'all' || getYear(resDate).toString() === filterYear;
       const matchMonth = filterMonth === 'all' || getMonth(resDate).toString() === filterMonth;
-      return matchYear && matchMonth;
+      const matchDay = filterDay === 'all' || getDate(resDate).toString() === filterDay;
+      
+      return matchYear && matchMonth && matchDay;
     }).sort((a, b) => {
       const da = new Date(a.date).getTime();
       const db = new Date(b.date).getTime();
       return da - db;
     });
-  }, [reservations, filterMonth, filterYear]);
+  }, [reservations, filterMonth, filterYear, filterDay]);
 
   const getActiveServicesText = (services: any) => {
     const names: Record<string, string> = {
@@ -113,8 +139,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <div className="pt-2 pb-20 px-4 md:px-8 max-w-7xl mx-auto">
       <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-12 gap-6">
         <div>
-          <div className="flex gap-4 mb-4">
+          <div className="flex flex-wrap gap-4 mb-4">
             <button onClick={onBackToBooking} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest">← Volver a Web</button>
+            <button onClick={onGoToAdminCalendar} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              Vista Calendario
+            </button>
             <button onClick={onGoToWineConfig} className="text-[#C5A059] font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
               Configurar Catas
             </button>
@@ -134,13 +164,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
 
           <div className="flex gap-3 bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
-            <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="bg-slate-50 border-none text-xs font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
-              <option value="all">Años</option>
-              {[2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
+            <select value={filterYear} onChange={(e) => setFilterYear(e.target.value)} className="bg-slate-50 border-none text-[10px] font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
+              <option value="all">Año</option>
+              {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
             </select>
-            <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="bg-slate-50 border-none text-xs font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
-              <option value="all">Meses</option>
+            <select value={filterMonth} onChange={(e) => setFilterMonth(e.target.value)} className="bg-slate-50 border-none text-[10px] font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
+              <option value="all">Mes</option>
               {[...Array(12)].map((_, i) => <option key={i} value={i}>{format(new Date(2000, i, 1), 'MMMM', { locale: es })}</option>)}
+            </select>
+            <select value={filterDay} onChange={(e) => setFilterDay(e.target.value)} className="bg-slate-50 border-none text-[10px] font-bold rounded-lg py-2 px-4 uppercase tracking-widest outline-none">
+              <option value="all">Día</option>
+              {[...Array(31)].map((_, i) => <option key={i+1} value={i+1}>{i+1}</option>)}
             </select>
           </div>
         </div>
@@ -197,7 +231,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <td className="px-6 py-6">
                       <select 
                         value={res.status}
-                        onChange={(e) => onUpdateStatus(res.id, e.target.value as ReservationStatus)}
+                        onChange={(e) => handleStatusChange(res, e.target.value as ReservationStatus)}
                         className={`text-[9px] font-bold px-3 py-2 rounded-xl border outline-none cursor-pointer ${
                           res.status === ReservationStatus.CONFIRMED ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
                           res.status === ReservationStatus.CANCELLED ? 'bg-rose-50 text-rose-700 border-rose-200' : 
