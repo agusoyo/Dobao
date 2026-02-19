@@ -30,6 +30,18 @@ export interface Reservation {
   createdAt: string;
 }
 
+export interface WeeklyPrice {
+  day_of_week: number;
+  price: number;
+}
+
+export interface SpecialPrice {
+  id: string;
+  date: string;
+  price: number;
+  reason: string;
+}
+
 export interface WineTasting {
   id: string;
   date: string;

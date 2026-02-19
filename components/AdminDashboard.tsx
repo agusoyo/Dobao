@@ -6,6 +6,7 @@ import { es } from 'date-fns/locale';
 import * as XLSX from 'xlsx';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import ReservationEditModal from '../src/components/ReservationEditModal'; // Import the new modal component
 
 interface AdminDashboardProps {
   reservations: Reservation[];
@@ -19,15 +20,17 @@ interface AdminDashboardProps {
   onGoToWineConfig?: () => void;
   onGoToBlockedDays?: () => void;
   onGoToAdminCalendar?: () => void;
+  onGoToPricingConfig?: () => void;
   onLogout?: () => void;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({ 
-  reservations, onUpdateStatus, onUpdateCost, onUpdateDeposit, onDelete, onBackToBooking, onGoToWineConfig, onGoToBlockedDays, onGoToAdminCalendar, onLogout 
+  reservations, onUpdateStatus, onUpdateCost, onUpdateDeposit, onUpdate, onDelete, onBackToBooking, onGoToWineConfig, onGoToBlockedDays, onGoToAdminCalendar, onGoToPricingConfig, onLogout 
 }) => {
   const [filterMonth, setFilterMonth] = useState<string>('all');
   const [filterYear, setFilterYear] = useState<string>(new Date().getFullYear().toString());
   const [filterDay, setFilterDay] = useState<string>('all');
+  const [selectedReservationForEdit, setSelectedReservationForEdit] = useState<Reservation | null>(null); // State to hold the reservation being edited
 
   const safeFormat = (date: string | Date | undefined, formatStr: string) => {
     if (!date) return 'N/A';
@@ -142,8 +145,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="flex flex-wrap gap-4 mb-4">
             <button onClick={onBackToBooking} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest">← Volver a Web</button>
             <button onClick={onGoToAdminCalendar} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z"/></svg>
               Vista Calendario
+            </button>
+            <button onClick={onGoToPricingConfig} className="text-indigo-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Configurar Precios
             </button>
             <button onClick={onGoToWineConfig} className="text-[#C5A059] font-bold text-[10px] uppercase tracking-widest flex items-center gap-2">
               Configurar Catas
@@ -243,7 +250,15 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <option value={ReservationStatus.CANCELLED}>Cancelado</option>
                       </select>
                     </td>
-                    <td className="px-6 py-6 text-right">
+                    <td className="px-6 py-6 text-right flex justify-end items-center gap-2">
+
+                      <button
+                        onClick={() => setSelectedReservationForEdit(res)}
+                        className="p-2 text-indigo-600 hover:text-indigo-800 transition-colors"
+                        title="Editar Reserva"
+                      >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                      </button>
                       <button onClick={() => onDelete(res.id)} className="p-2 text-slate-200 hover:text-red-500 transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                       </button>
@@ -255,6 +270,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </table>
         </div>
       </div>
+
+      {selectedReservationForEdit && (
+        <ReservationEditModal
+          reservation={selectedReservationForEdit}
+          onSave={async (updatedRes) => {
+            await onUpdate(updatedRes);
+            setSelectedReservationForEdit(null);
+          }}
+          onClose={() => setSelectedReservationForEdit(null)}
+        />
+      )}
     </div>
   );
 };

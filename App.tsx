@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Reservation, ReservationStatus, AdditionalServices, ReservationSlot, WineTasting, BlockedDay } from './types';
+import { Reservation, ReservationStatus, AdditionalServices, ReservationSlot, WineTasting, BlockedDay, WeeklyPrice, SpecialPrice } from './types';
 import { INITIAL_RESERVATIONS, TXOKO_CONFIG } from './constants';
 import Calendar from './components/Calendar';
 import AdminDashboard from './components/AdminDashboard';
@@ -9,20 +9,23 @@ import WineTastingConfig from './components/WineTastingConfig';
 import WineTastingsPublic from './components/WineTastingsPublic';
 import BlockedDaysConfig from './components/BlockedDaysConfig';
 import AdminCalendarView from './components/AdminCalendarView';
+import PricingConfig from './components/PricingConfig';
 import Home from './components/Home';
 import { supabase } from './services/supabaseClient';
-import { format, isAfter, parseISO, startOfDay } from 'date-fns';
+import { format, isAfter, parseISO, startOfDay, getDay } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 const HERO_IMAGE_URL = "https://raw.githubusercontent.com/agusoyo/Dobao/main/IMG_4292.jpeg";
 
-type ViewState = 'home' | 'booking' | 'admin' | 'admin-list' | 'gallery' | 'wine-config' | 'tastings' | 'blocked-days' | 'admin-calendar';
+type ViewState = 'home' | 'booking' | 'admin' | 'admin-list' | 'gallery' | 'wine-config' | 'tastings' | 'blocked-days' | 'admin-calendar' | 'pricing-config';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewState>('home');
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tastings, setTastings] = useState<WineTasting[]>([]);
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
+  const [weeklyPrices, setWeeklyPrices] = useState<WeeklyPrice[]>([]);
+  const [specialPrices, setSpecialPrices] = useState<SpecialPrice[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<ReservationSlot | null>(null);
@@ -48,11 +51,13 @@ const App: React.FC = () => {
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
-      const [resResult, wineResult, attendeesResult, blockedResult] = await Promise.allSettled([
+      const [resResult, wineResult, attendeesResult, blockedResult, weeklyRes, specialRes] = await Promise.allSettled([
         supabase.from('reservations').select('*'),
         supabase.from('wine_tastings').select('*'),
         supabase.from('tasting_attendees').select('tasting_id, seats'),
-        supabase.from('blocked_days').select('id, date, reason')
+        supabase.from('blocked_days').select('id, date, reason'),
+        supabase.from('weekly_prices').select('*'),
+        supabase.from('special_prices').select('*')
       ]);
 
       const counts: Record<string, number> = {};
@@ -107,6 +112,9 @@ const App: React.FC = () => {
         }
       }
 
+      if (weeklyRes.status === 'fulfilled' && weeklyRes.value.data) setWeeklyPrices(weeklyRes.value.data);
+      if (specialRes.status === 'fulfilled' && specialRes.value.data) setSpecialPrices(specialRes.value.data);
+
     } catch (err) {
       console.error("Error sincronizando:", err);
     } finally {
@@ -117,6 +125,23 @@ const App: React.FC = () => {
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
+
+  // Cálculo del precio dinámico
+  const currentDayPrice = useMemo(() => {
+    if (!selectedDate) return TXOKO_CONFIG.pricePerDay;
+    const dateStr = format(selectedDate, 'yyyy-MM-dd');
+    
+    // 1. Prioridad: Tarifa Especial
+    const special = specialPrices.find(sp => sp.date === dateStr);
+    if (special) return special.price;
+
+    // 2. Tarifa Semanal
+    const dayOfWeek = getDay(selectedDate); // 0-6
+    const weekly = weeklyPrices.find(wp => wp.day_of_week === dayOfWeek);
+    if (weekly) return weekly.price;
+
+    return TXOKO_CONFIG.pricePerDay;
+  }, [selectedDate, weeklyPrices, specialPrices]);
 
   const nextUpcomingTasting = useMemo(() => {
     const today = startOfDay(new Date());
@@ -161,6 +186,27 @@ const App: React.FC = () => {
     if (!error) fetchAllData();
   };
 
+  const handleUpdateReservation = async (updatedReservation: Reservation) => {
+    const { id, createdAt, ...updates } = updatedReservation; // Exclude id and createdAt from updates
+    const payload = {
+      date: updates.date,
+      slot: updates.slot,
+      customer_name: updates.customerName,
+      email: updates.email,
+      phone: updates.phone,
+      guests: updates.guests,
+      purpose: updates.purpose,
+      comments: updates.comments,
+      event_cost: updates.eventCost,
+      deposit: updates.deposit,
+      status: updates.status,
+      services: updates.services,
+    };
+    const { error } = await supabase.from('reservations').update(payload).eq('id', id);
+    if (!error) fetchAllData();
+    else console.error("Error updating reservation:", error);
+  };
+
   const handleDelete = async (id: string) => {
     if (!confirm('¿Seguro que desea eliminar esta reserva?')) return;
     const { error } = await supabase.from('reservations').delete().eq('id', id);
@@ -182,7 +228,8 @@ const App: React.FC = () => {
       purpose: formData.purpose,
       comments: formData.comments,
       services: formData.services,
-      status: ReservationStatus.PENDING
+      status: ReservationStatus.PENDING,
+      event_cost: currentDayPrice // Guardamos el precio dinámico calculado en el momento
     };
 
     const { error } = await supabase.from('reservations').insert([payload]);
@@ -210,6 +257,7 @@ const App: React.FC = () => {
         `FECHA: ${format(selectedDate, 'dd/MM/yyyy')}\n` +
         `TURNO: ${slotText}\n` +
         `INVITADOS: ${formData.guests}\n` +
+        `COSTE LOCAL: ${currentDayPrice}€\n` +
         `------------------------------------------\n` +
         `CLIENTE: ${formData.name}\n` +
         `TELÉFONO: ${formData.phone}\n` +
@@ -278,7 +326,7 @@ const App: React.FC = () => {
             <button onClick={() => setView('booking')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'booking' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Reserva Local</button>
             <button onClick={() => setView('tastings')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'tastings' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Catas</button>
             <button onClick={() => setView('gallery')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${view === 'gallery' ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Galería</button>
-            <button onClick={() => setView('admin')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${['admin', 'admin-list', 'wine-config', 'blocked-days', 'admin-calendar'].includes(view) ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Admin</button>
+            <button onClick={() => setView('admin')} className={`text-[7px] md:text-[11px] font-bold uppercase tracking-widest transition-all ${['admin', 'admin-list', 'wine-config', 'blocked-days', 'admin-calendar', 'pricing-config'].includes(view) ? 'text-[#C5A059] border-b border-[#C5A059]' : 'text-slate-400 hover:text-white'}`}>Admin</button>
           </nav>
         </div>
       </header>
@@ -318,6 +366,21 @@ const App: React.FC = () => {
                 <div className="lg:col-span-7">
                   <div className="mb-10"><h3 className="text-3xl md:text-5xl font-serif text-white mb-4">2. Detalles del Evento</h3><div className="w-16 h-1 bg-[#C5A059]"></div></div>
                   <div className={`bg-[#141414] rounded-[2rem] p-8 md:p-12 border border-white/5 transition-all ${!selectedDate ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
+                    
+                    {/* Indicador de precio dinámico */}
+                    {selectedDate && (
+                      <div className="mb-10 p-6 bg-[#C5A059]/10 border border-[#C5A059]/20 rounded-2xl flex items-center justify-between">
+                         <div>
+                            <span className="text-[10px] font-black text-[#C5A059] uppercase tracking-widest block mb-1">Precio para esta fecha</span>
+                            <span className="text-white text-sm font-medium">{format(selectedDate, "EEEE d 'de' MMMM", { locale: es })}</span>
+                         </div>
+                         <div className="text-right">
+                            <span className="text-3xl font-serif text-[#C5A059]">{currentDayPrice}€</span>
+                            <span className="block text-[8px] text-slate-500 font-bold uppercase">IVA incluido</span>
+                         </div>
+                      </div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-10">
                       <div className="grid grid-cols-2 gap-4">
                         {[ReservationSlot.MIDDAY, ReservationSlot.NIGHT].map(slot => {
@@ -439,15 +502,22 @@ const App: React.FC = () => {
               onUpdateStatus={handleUpdateStatus}
               onUpdateCost={handleUpdateCost}
               onUpdateDeposit={handleUpdateDeposit}
-              onUpdate={() => {}}
+              onUpdate={handleUpdateReservation} // Pass the new update function
               onDelete={handleDelete}
-              onImport={() => {}}
+              onImport={() => {}} // Placeholder for future import functionality
               onBackToBooking={() => setView('home')}
               onGoToWineConfig={() => setView('wine-config')}
               onGoToBlockedDays={() => setView('blocked-days')}
               onGoToAdminCalendar={() => setView('admin')}
+              onGoToPricingConfig={() => setView('pricing-config')}
               onLogout={() => setIsAdminAuthenticated(false)}
             />
+          </div>
+        )}
+
+        {view === 'pricing-config' && isAdminAuthenticated && (
+          <div className="pt-32 min-h-screen bg-slate-50 text-slate-900">
+             <PricingConfig onBack={() => setView('admin-list')} onRefresh={fetchAllData} />
           </div>
         )}
 

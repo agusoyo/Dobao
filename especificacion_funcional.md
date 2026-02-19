@@ -1,71 +1,73 @@
-# Especificación Funcional: Sistema de Gestión de Reservas - Dobao Gourmet
+# Especificación Funcional: Sistema de Gestión Dobao Gourmet
 
-## 1. Resumen del Proyecto
-Dobao Gourmet es una aplicación web premium diseñada para la gestión integral de un Txoko (sociedad gastronómica privada) ubicado en Vigo. El sistema permite a los clientes finales solicitar reservas de espacio para eventos privados y apuntarse a experiencias gastronómicas (catas de vino), mientras proporciona al administrador herramientas avanzadas para la gestión de disponibilidad, control de costes, aforos y cierres de calendario.
-
----
-
-## 2. Arquitectura Técnica
-- **Frontend:** React 19 con TypeScript.
-- **Estilos:** Tailwind CSS con tipografías premium (Playfair Display para serif, Inter para sans).
-- **Base de Datos:** Supabase (PostgreSQL) - *Migración planificada a MySQL*.
-- **Integración de IA:** Google Gemini API para asesoramiento en la planificación de eventos (cantidades y organización).
-- **Utilidades:** 
-  - `date-fns` para lógica compleja de calendarios.
-  - `xlsx` y `jspdf` para generación de informes administrativos.
+## 1. Introducción
+**Dobao Gourmet** es una plataforma integral diseñada para la gestión de un Txoko premium en Vigo. El sistema permite la comercialización del local para eventos privados y la gestión de experiencias de cata de vinos, integrando una capa administrativa para el control total de operaciones, finanzas y disponibilidad.
 
 ---
 
-## 3. Módulos Funcionales
+## 2. Módulo 1: Portal de Usuario y Navegación (Landing)
+Este módulo gestiona la identidad visual y el acceso a los servicios.
 
-### Módulo 1: Portal Público (Home)
-Este módulo gestiona la primera impresión y la navegación principal.
-- **Hero Escindido:** Diseño visual que divide la pantalla en dos grandes áreas interactivas: "El Arte de la Mesa" (Reservas) y "El Arte del Vino" (Catas).
-- **Notificador de Próxima Cata:** Widget flotante que detecta automáticamente el próximo evento en el calendario y muestra un aviso de "Últimas plazas" si el aforo es crítico (<= 4 plazas).
-- **Manifiesto:** Sección estética que refuerza el valor de marca del Txoko.
-
-### Módulo 2: Sistema de Reservas de Espacio (Eventos Privados)
-Gestiona el alquiler del local completo.
-- **Calendario Maestro:** 
-  - Visualización de estados: Libre, Parcialmente Ocupado (un turno libre), Agotado e Inhabilitado.
-  - Sincronización en tiempo real con eventos de catas (una cata ocupa un turno del local).
-- **Selector de Turnos:** Selección obligatoria entre **Comida (MIDDAY)** o **Cena (NIGHT)**.
-  - *Regla de validación:* Deshabilitación automática de botones si el slot ya está comprometido en la base de datos.
-- **Configurador de Servicios:** Checkbox para servicios adicionales (Catering, Multimedia, Vinoteca).
-  - *Lógica de exclusión:* Los barriles de cerveza (Estrella vs 1906) son mutuamente excluyentes.
-- **Flujo de Notificación:** Al completar la solicitud, se registra en Supabase y se dispara un `mailto` preconfigurado para comunicación directa.
-
-### Módulo 3: Experiencias Gourmet (Catas)
-Módulo destinado a la venta de plazas para eventos organizados.
-- **Catálogo de Eventos:** Tarjetas con fecha, precio por persona y descripción técnica de la sesión.
-- **Gestor de Plazas:** Selector de cantidad de asistentes que valida dinámicamente el aforo restante antes de permitir la reserva.
-- **Confirmación:** Registro de asistentes vinculado a un ID de evento específico.
-
-### Módulo 4: Panel de Administración (Dashboard)
-Centro de control operativo protegido por contraseña (`admin2025`).
-- **Gestión de Reservas Privadas:** 
-  - Tabla interactiva con filtros por año y mes.
-  - **Edición Financiera:** Permite al admin introducir el coste real del evento y el depósito entregado, calculando el saldo pendiente automáticamente.
-  - **Cambio de Estado:** Paso manual de `PENDING` a `CONFIRMED` o `CANCELLED`.
-- **Reporting:** Botones de exportación rápida a **Excel** (datos completos) y **PDF** (resumen ejecutivo).
-- **Gestión de Asistentes:** Desglose detallado de quién se ha apuntado a cada cata, con opción de editar sus depósitos o eliminar registros.
-
-### Módulo 5: Configuración de Sistema
-- **Editor de Catas:** Interfaz para publicar nuevos eventos de vino, definiendo aforo, precio y descripción.
-- **Bloqueador de Fechas:** Herramienta para cerrar el local en fechas específicas (festivos, mantenimiento), anulando la disponibilidad en el calendario público independientemente de si hay reservas previas.
+*   **Navegación Dual (Hero Split):** Interfaz dividida en la página de inicio que permite al usuario elegir entre "Reserva de Local" (Privado) y "Experiencias Gourmet" (Público).
+*   **Asesor de Planificación IA (Gemini):** Integración con Google Gemini para proporcionar consejos automáticos sobre organización y cantidades de comida basados en el número de invitados y el motivo del evento.
+*   **Notificador de Eventos Próximos:** Widget dinámico en la Home que muestra la próxima cata disponible con alertas de "Últimas plazas" basadas en el aforo real.
+*   **Galería Multimedia:** Visualizador de alta resolución con funcionalidad de lightbox para mostrar las instalaciones.
 
 ---
 
-## 4. Reglas de Negocio Críticas
-1. **Conflicto de Turno:** El sistema no permite que una reserva privada y una cata coincidan en el mismo día y mismo turno.
-2. **Prioridad Administrativa:** Los días en la tabla `blocked_days` tienen prioridad absoluta sobre cualquier otra lógica de disponibilidad.
-3. **Control de Aforo:** Un asistente no puede reservar más plazas de las que queden disponibles en el contador `max_capacity - current_attendees`.
-4. **Persistencia:** Todas las acciones de borrado en el panel admin son definitivas tras confirmación del usuario para mantener la integridad de la base de datos.
+## 3. Módulo 2: Gestión de Reservas de Local (Privado)
+Módulo core para el alquiler íntegro del espacio.
+
+*   **Calendario Maestro de Disponibilidad:** Visualización de días libres, parcialmente ocupados (1 de 2 turnos), totalmente ocupados o inhabilitados administrativamente.
+*   **Lógica de Turnos:** Selección entre turno de Comida (MIDDAY) o Cena (NIGHT). El sistema valida automáticamente que el turno no esté ocupado por otra reserva o por una cata programada.
+*   **Tarifas Dinámicas Inteligentes:** 
+    *   **Precios Base:** Configuración por día de la semana (ej. precios diferentes para fin de semana vs diario).
+    *   **Precios Especiales:** Sobrescritura manual para fechas específicas (ej. Navidad, Nochevieja, festivos locales).
+*   **Configurador de Servicios Extra:** 
+    *   Servicios incluidos por defecto (Limpieza profesional).
+    *   Servicios opcionales (Catering, Multimedia, Vinoteca).
+    *   Gestión de exclusividad de barriles (Selección entre Estrella Galicia o 1906).
+*   **Flujo de Solicitud:** Generación automática de correo electrónico (`mailto`) con el resumen detallado para el cliente y el administrador.
 
 ---
 
-## 5. Esquema de Datos (Entidades)
-- **`reservations`**: `id, date, slot, customer_name, email, phone, guests, purpose, services(JSON), event_cost, deposit, status`.
-- **`wine_tastings`**: `id, date, slot, name, max_capacity, price_per_person, description`.
-- **`tasting_attendees`**: `id, tasting_id, name, email, phone, seats, deposit`.
-- **`blocked_days`**: `id, date, reason`.
+## 4. Módulo 3: Experiencias Gastronómicas (Catas Públicas)
+Gestión de eventos públicos por plazas individuales.
+
+*   **Catálogo de Catas:** Listado dinámico de sesiones activas con descripción enológica, precio y fecha.
+*   **Control de Aforo en Tiempo Real:** Validación de plazas disponibles antes de permitir la reserva, impidiendo sobrepasar la capacidad máxima del local.
+*   **Formulario de Inscripción:** Captura de datos de contacto y selector de cantidad de plazas.
+*   **Notificación de Reserva:** Envío de confirmación vía email detallando el evento seleccionado y el coste total.
+
+---
+
+## 5. Módulo 4: Panel de Administración (Backoffice)
+Centro de control operativo protegido por credenciales seguras.
+
+*   **Dashboard de Reservas:** Tabla interactiva con búsqueda y filtrado avanzado por año, mes y día.
+*   **Gestión Financiera:** 
+    *   Edición de costes totales por evento.
+    *   Registro de depósitos/fianzas entregados.
+    *   Cálculo automático de saldo pendiente.
+*   **Control de Estados:** Gestión de estados de reserva (Pendiente, Validado, Cancelado).
+*   **Validación con Notificación:** Al confirmar una reserva, el sistema genera automáticamente un correo de confirmación con texto comercial personalizado.
+*   **Reporting y Exportación:** Generación de informes en formatos Excel (datos planos) y PDF (resumen ejecutivo con formato profesional).
+*   **Vista de Calendario Administrativo:** Interfaz visual para supervisar la ocupación mensual y gestionar estados de turnos rápidamente.
+
+---
+
+## 6. Módulo 5: Configuración del Sistema
+Herramientas para la personalización y mantenimiento del negocio.
+
+*   **Gestor de Catas (Editor):** Creación y edición de eventos de vino, definición de aforos y precios por sesión.
+*   **Gestor de Asistentes:** Listado detallado de personas inscritas por evento de cata para control de pagos y asistencia.
+*   **Configuración de Tarifas:** Interfaz dedicada para definir la tabla de precios semanales y gestionar excepciones de calendario.
+*   **Bloqueo de Calendario:** Herramienta para inhabilitar días específicos por mantenimiento, cierre o vacaciones, anulando la disponibilidad pública.
+
+---
+
+## 7. Reglas de Negocio y Requerimientos Técnicos
+*   **Sincronización de Turnos:** Una cata organizada consume un turno del local, impidiendo reservas privadas en ese mismo slot para evitar colisiones.
+*   **Seguridad:** Persistencia de datos mediante Supabase (PostgreSQL) con acceso restringido a las tablas críticas.
+*   **Responsividad:** Diseño adaptable para asegurar una experiencia óptima tanto en dispositivos móviles (reservas de clientes) como en tablets/escritorio (gestión admin).
+*   **IA de Soporte:** El motor de Gemini API requiere configuración de clave de entorno para el asesoramiento dinámico.
